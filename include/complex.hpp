@@ -18,41 +18,39 @@
 namespace dyfc {
 namespace blas {
 
-template<typename T>
+template <typename T>
 class Complex {
-    T real;
-    T imag;
+  T real;
+  T imag;
 
-public:
-    Complex(T real = 0, T imag = 0) : real(real), imag(imag) {}
+ public:
+  Complex(T real = 0, T imag = 0) : real(real), imag(imag) {}
 
-    Complex operator+(const Complex& other) const {
-        return Complex(real + other.real, imag + other.imag);
-    }
+  Complex operator+(const Complex& other) const {
+    return Complex(real + other.real, imag + other.imag);
+  }
 
-    Complex operator-(const Complex& other) const {
-        return Complex(real - other.real, imag - other.imag);
-    }
+  Complex operator-(const Complex& other) const {
+    return Complex(real - other.real, imag - other.imag);
+  }
 
-    Complex operator*(const Complex& other) const {
-        T newReal = real * other.real - imag * other.imag;
-        T newImag = real * other.imag + imag * other.real;
-        return Complex(newReal, newImag);
-    }
+  Complex operator*(const Complex& other) const {
+    T newReal = real * other.real - imag * other.imag;
+    T newImag = real * other.imag + imag * other.real;
+    return Complex(newReal, newImag);
+  }
 
-    Complex operator/(const Complex& other) const {
-        T denominator = other.real * other.real + other.imag * other.imag;
-        T newReal = (real * other.real + imag * other.imag) / denominator;
-        T newImag = (imag * other.real - real * other.imag) / denominator;
-        return Complex(newReal, newImag);
-    }
+  Complex operator/(const Complex& other) const {
+    T denominator = other.real * other.real + other.imag * other.imag;
+    T newReal = (real * other.real + imag * other.imag) / denominator;
+    T newImag = (imag * other.real - real * other.imag) / denominator;
+    return Complex(newReal, newImag);
+  }
 
-    Complex conj() const {
-        return Complex(real, -imag);
-    }
+  Complex conj() const { return Complex(real, -imag); }
 };
 
-} // namespace blas
-} // namespace dyfc
+}  // namespace blas
+}  // namespace dyfc
 
-#endif // DYFC_BLAS_COMPLEX_HPP
+#endif  // DYFC_BLAS_COMPLEX_HPP

@@ -15,8 +15,9 @@
 #ifndef DYFC_BLAS_HPP
 #define DYFC_BLAS_HPP
 
+#include "axpy.hpp"
 #include "complex.hpp"
-#include "types.hpp"
 #include "prototypes.hpp"
+#include "types.hpp"
 
-#endif // DYFC_BLAS_HPP
+#endif  // DYFC_BLAS_HPP
