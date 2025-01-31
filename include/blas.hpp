@@ -18,6 +18,10 @@
 #include "axpy.hpp"
 #include "complex.hpp"
 #include "prototypes.hpp"
+#include "example.hpp"
 #include "types.hpp"
+
+// Converts a 2D array to an unstructured pointer
+#define FLATTEN_MATRIX(x) &x[0][0]
 
 #endif  // DYFC_BLAS_HPP

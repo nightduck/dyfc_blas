@@ -49,7 +49,7 @@ constexpr size_t log2(size_t n) { return ((n < 2) ? 0 : 1 + log2(n / 2)); }
  */
 template <typename T, unsigned int Par>
 class Vector {
-  hls::stream<WideType<T, Par>> data;
+  hls::stream<WideType<T, Par>> data();
   const int length_;
 
  public:
@@ -113,7 +113,7 @@ class Vector {
    * @param in_array The array to fill the vector with.
    * @param Length The length of the vector
    */
-  Vector(T * in_array, unsigned int Length) : length_(Length) {
+  Vector(T *in_array, unsigned int Length) : length_(Length) {
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
@@ -156,7 +156,7 @@ class Vector {
    *
    * @param value The pointer to memory to write the stream to.
    */
-  void write(T * out_array) {
+  void write(T *out_array) {
 #pragma HLS INLINE
     for (size_t i = 0; i < length_; i += Par) {
 #pragma HLS PIPELINE
@@ -258,7 +258,7 @@ class Vector {
  */
 template <typename T, unsigned int Par, MajorOrder Order = RowMajor>
 class Matrix {
-  hls::stream<WideType<T, Par>> data;
+  hls::stream<WideType<T, Par>> data();
   const unsigned int rows_;
   const unsigned int cols_;
 
@@ -297,6 +297,55 @@ class Matrix {
       assert(("Rows must be a multiple of Par", Rows % Par == 0));
     }
 #endif
+  }
+
+  /**
+   * Creates a matrix and fills it with a 2D array
+   *
+   * @param in_array The array to fill the vector with.
+   * @param Length The length of the vector
+   */
+  Matrix(T *in_array, unsigned int Rows, unsigned int Cols) : rows_(Rows), cols_(Cols) {
+#pragma HLS INLINE
+    static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
+#ifndef __SYNTHESIS__
+    assert(("Rows must be greater than 0", Rows > 0));
+    assert(("Cols must be greater than 0", Cols > 0));
+
+    // TODO: Maybe permit non multiples of Par? And just pad it with zeros
+    // internally.
+    if (Order == RowMajor) {
+      assert(("Cols must be a multiple of Par", Cols % Par == 0));
+    } else {
+      assert(("Rows must be a multiple of Par", Rows % Par == 0));
+    }
+#endif
+
+    if (Order == RowMajor) {
+      for (size_t i = 0; i < Rows; i++) {
+        for (size_t j = 0; j < Cols; j += Par) {
+#pragma HLS PIPELINE
+#pragma HLS LOOP_FLATTEN
+          WideType<T, Par> value;
+          for (size_t k = 0; k < Par; k++) {
+            value[k] = in_array[i * Cols + j + k];
+          }
+          data.write(value);
+        }
+      }
+    } else {
+      for (size_t i = 0; i < Cols; i++) {
+        for (size_t j = 0; j < Rows; j += Par) {
+#pragma HLS PIPELINE
+#pragma HLS LOOP_FLATTEN
+          WideType<T, Par> value;
+          for (size_t k = 0; k < Par; k++) {
+            value[k] = in_array[i * Rows + j + k];
+          }
+          data.write(value);
+        }
+      }
+    }
   }
 
   /**
