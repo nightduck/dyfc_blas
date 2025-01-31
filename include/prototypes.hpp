@@ -83,7 +83,7 @@ void copy(Vector<T, Par> x, unsigned int incX, Vector<T, Par> result) {
  * The BLAS swap operation is not possible on streams, so this function will
  * always assert false.
  */
-template <typename T, unsigned int Par,>
+template <typename T, unsigned int Par>
 void swap(Vector<T, Par> &x, Vector<T, Par> &y) {
   assert(("Swap operation not possible on streams", false));
 }
@@ -212,7 +212,7 @@ void amax(unsigned int n, Vector<T, Par> &x, unsigned int &result);
  */
 template <typename T>
 void rotg(T a, T b, T &c, T &s, T &r, T &z);
-template <typename Complex<T>>
+template <typename T>
 void rotg(Complex<T> a, Complex<T> b, T &c, Complex<T> &s, Complex<T> &r);
 // TODO: Make special cases for:
 // 1. Real a, b, c, s, r, z
@@ -366,7 +366,7 @@ void rotm(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &y, WideType<T, 5> &
  * @param[in]  y The input vector to add to the result.
  * @param[out] result The output vector to write to.
  */
-template <typename T, unsigned int Par, Order = RowMajor>
+template <typename T, unsigned int Par, MajorOrder Order=RowMajor>
 void mv(unsigned int m, unsigned int n, T alpha, Matrix<T, Par, Order> &A, Vector<T, Par> &x, T beta,
         Vector<T, Par> &y, Vector<T, Par> &result);
 // TODO: Subtemplates for gemv, hemv, symv, gbmv, hbmv, sbmv, hpmv, spmv
@@ -401,7 +401,7 @@ void mv(unsigned int m, unsigned int n, T alpha, Matrix<T, Par, Order> &A, Vecto
  * @param[in]  y The input vector to add to the result.
  * @param[out] result The output vector to write to.
  */
-template <typename T, unsigned int Par, Order = RowMajor>
+template <typename T, unsigned int Par, MajorOrder Order=RowMajor>
 void mv(unsigned int m, unsigned int n, T alpha, Matrix<T, Par, Order> &A, Vector<T, Par> &x,
         Vector<T, Par> &result);
 // TODO: Subtemplate for trmv, tbmv, tpmv
@@ -425,7 +425,7 @@ void mv(unsigned int m, unsigned int n, T alpha, Matrix<T, Par, Order> &A, Vecto
  * @param[in]  x The input vector to multiply.
  * @param[out] result The output vector to write to.
  */
-template <typename T, unsigned int Par, Order = RowMajor,
+template <typename T, unsigned int Par, MajorOrder Order=RowMajor,
           UpperLower UpLo = Upper>
 void trmv(unsigned int n, TriangularMatrix<T, Par, Order, UpLo> &A, Vector<T, Par> &x,
           Vector<T, Par> &result);
@@ -454,7 +454,7 @@ void trmv(unsigned int n, TriangularMatrix<T, Par, Order, UpLo> &A, Vector<T, Pa
  * @param[in]  x The input vector to solve for.
  * @param[out] result The output vector to write to.
  */
-template <typename T, unsigned int Par, Order = RowMajor,
+template <typename T, unsigned int Par, MajorOrder Order=RowMajor,
           UpperLower UpLo = Upper>
 void trsv(unsigned int n, TriangularMatrix<T, Par, Order, UpLo> &A, Vector<T, Par> &x,
           Vector<T, Par> &result);
@@ -512,7 +512,7 @@ void ger(unsigned int m, unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, P
  * @param[out] result The output matrix to write to.
  */
 template <typename T, unsigned int Par,
-          MajorOrder Order = RowMajorOrder>
+          MajorOrder Order=RowMajor>
 void gerc(unsigned int m, unsigned int n, T alpha, Vector<Complex<T>, Par> &x, Vector<Complex<T>, Par> &y,
           Matrix<Complex<T>, Par, Order> &A,
           Matrix<Complex<T>, Par, Order> &result);
@@ -538,7 +538,7 @@ void gerc(unsigned int m, unsigned int n, T alpha, Vector<Complex<T>, Par> &x, V
  * @param[in]  A The input matrix to add to.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, MajorOrder Order = RowMajorOrder,
+template <typename T, unsigned int Par, MajorOrder Order=RowMajor,
           UpperLower UpLo = Upper>
 void syr2(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y,
           SymmetricMatrix<T, Par, Order, UpLo> &A,
@@ -565,7 +565,7 @@ void syr2(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y,
  * @param[in]  A The input matrix to add to.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, MajorOrder Order = RowMajorOrder,
+template <typename T, unsigned int Par, MajorOrder Order=RowMajor,
           UpperLower UpLo = Upper>
 void her2(unsigned int n, T alpha, Vector<Complex<T>, Par> &x, Vector<Complex<T>, Par> &y,
           HermitianMatrix<Complex<T>, Par, Order, UpLo> &A,
@@ -605,7 +605,7 @@ void her2(unsigned int n, T alpha, Vector<Complex<T>, Par> &x, Vector<Complex<T>
  * @param[out] result The output matrix to write to.
  */
 template <typename T, unsigned int Par,
-          OrderA = RowMajor, OrderB = ColMajor, UpperLower UpLo = Upper>
+          MajorOrder OrderA = RowMajor, MajorOrder OrderB = ColMajor, UpperLower UpLo=Upper>
 void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, OrderA> &A, Matrix<T, Par, OrderB> &B, T beta,
         Matrix<T, Par, OrderA> &C, Matrix<T, Par, OrderA> &result);
 // TODO: Subtemplates for gemm, hemm, symm, gemmtr
@@ -642,7 +642,7 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, 
  * @param[out] result The output matrix to write to.
  */
 template <typename T, unsigned int Par,
-          OrderA = RowMajor, OrderB = ColMajor, UpperLower UpLo = Upper>
+          MajorOrder OrderA = RowMajor, MajorOrder OrderB = ColMajor, UpperLower UpLo = Upper>
 void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, OrderA> &A, Matrix<T, Par, OrderB> &B,
         Matrix<T, Par, OrderA> &result);
 // TODO: Subtemplates for gemm, hemm, symm, trmm
@@ -670,7 +670,7 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, 
  * @param[in]  B The input matrix to solve for. Dimensions are m x n.
  * @param[out] result The output matrix to write to. Dimensions are m x n.
  */
-template <typename T, unsigned int Par, Order = RowMajor,
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor,
           UpperLower UpLo = Upper>
 void trsm(unsigned int m, unsigned int n, T alpha, TriangularMatrix<T, Par, Order, UpLo> &A, Matrix<T, Par> &B,
           Matrix<T, Par> &result);
@@ -699,7 +699,7 @@ void trsm(unsigned int m, unsigned int n, T alpha, TriangularMatrix<T, Par, Orde
  * @param[in]  C The input matrix to add to. Is square and symmetric.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, Order = RowMajor,
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor,
           UpperLower UpLo = Upper>
 void syrk(unsigned int n, unsigned int k, T alpha, Matrix<T, Par, Order> &A, T beta,
           SymmetricMatrix<T, Par, Order, UpLo> &C,
@@ -727,7 +727,7 @@ void syrk(unsigned int n, unsigned int k, T alpha, Matrix<T, Par, Order> &A, T b
  * @param[in]  C The input matrix to add to. Is square and Hermitian.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, Order = RowMajor,
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor,
           UpperLower UpLo = Upper>
 void herk(unsigned int n, unsigned int k, T alpha, Matrix<Complex<T>, Par, Order> &A, T beta,
           HermitianMatrix<Complex<T>, Par, Order, UpLo> &C,
@@ -757,7 +757,7 @@ void herk(unsigned int n, unsigned int k, T alpha, Matrix<Complex<T>, Par, Order
  * @param[in]  C The input matrix to add to. Is square and symmetric.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, Order = RowMajor,
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor,
           UpperLower UpLo = Upper>
 void syr2k(unsigned int n, unsigned int k, T alpha, Matrix<T, Par, Order> &A, Matrix<T, Par, Order> &B,
            T beta, SymmetricMatrix<T, Par, Order, UpLo> &C,
@@ -788,7 +788,7 @@ void syr2k(unsigned int n, unsigned int k, T alpha, Matrix<T, Par, Order> &A, Ma
  * @param[in]  C The input matrix to add to. Is square and Hermitian.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, Order = RowMajor,
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor,
           UpperLower UpLo = Upper>
 void her2k(unsigned int n, unsigned int k, T alpha, Matrix<Complex<T>, Par, Order> &A,
            Matrix<Complex<T>, Par, Order> &B, T beta,

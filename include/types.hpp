@@ -28,7 +28,7 @@ enum UpperLower { Upper, Lower };
 
 // Alias to avoid confusing hls vector with blas vector
 template <typename T, unsigned int Par>
-using WideType<T, Par> = hls::vector<T, Par>;
+using WideType = hls::vector<T, Par>;
 
 // NOTE: A design decision was made to include the vector and matrix dimensions as class members
 //    instead of template parameters. This is because the functions that will accept vectors and
@@ -63,8 +63,8 @@ class Vector {
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
-    assert(Length > 0, "Cols must be greater than 0");
-    assert(Length % Par == 0, "Length must be a multiple of Par");
+    assert(("Cols must be greater than 0", Length > 0));
+    assert(("Length must be a multiple of Par", Length % Par == 0));
 #endif
   }
 
@@ -78,8 +78,8 @@ class Vector {
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
-    assert(Length > 0, "Cols must be greater than 0");
-    assert(Length % Par == 0, "Length must be a multiple of Par");
+    assert(("Cols must be greater than 0", Length > 0));
+    assert(("Length must be a multiple of Par", Length % Par == 0));
 #endif
   }
 
@@ -93,8 +93,8 @@ class Vector {
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
-    assert(Length > 0, "Cols must be greater than 0");
-    assert(Length % Par == 0, "Length must be a multiple of Par");
+    assert(("Cols must be greater than 0", Length > 0));
+    assert(("Length must be a multiple of Par", Length % Par == 0));
 #endif
     for (size_t i = 0; i < Length; i += Par) {
 #pragma HLS PIPELINE
@@ -102,6 +102,30 @@ class Vector {
       for (size_t j = 0; j < Par; j++) {
 #pragma HLS UNROLL
         value[j] = p_Val;
+      }
+      data.write(value);
+    }
+  }
+
+  /**
+   * Creates a vector and fills it with an array
+   *
+   * @param in_array The array to fill the vector with.
+   * @param Length The length of the vector
+   */
+  Vector(T * in_array, unsigned int Length) : length_(Length) {
+#pragma HLS INLINE
+    static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
+#ifndef __SYNTHESIS__
+    assert(("Cols must be greater than 0", Length > 0));
+    assert(("Length must be a multiple of Par", Length % Par == 0));
+#endif
+    for (size_t i = 0; i < Length; i += Par) {
+#pragma HLS PIPELINE
+      WideType<T, Par> value;
+      for (size_t j = 0; j < Par; j++) {
+#pragma HLS UNROLL
+        value[j] = in_array[i + j];
       }
       data.write(value);
     }
@@ -128,6 +152,23 @@ class Vector {
   }
 
   /**
+   * Writes the stream to memory
+   *
+   * @param value The pointer to memory to write the stream to.
+   */
+  void write(T * out_array) {
+#pragma HLS INLINE
+    for (size_t i = 0; i < length_; i += Par) {
+#pragma HLS PIPELINE
+      WideType<T, Par> value = data.read();
+      for (size_t j = 0; j < Par; j++) {
+#pragma HLS UNROLL
+        out_array[i + j] = value[j];
+      }
+    }
+  }
+
+  /**
    * Checks if the underlying stream is empty
    *
    * @return True if the stream is empty, false otherwise.
@@ -148,27 +189,27 @@ class Vector {
     return data.size();
   }
 
-  /**
-   * Splits the vector into N vectors. Consumes the contents of the vector.
-   *
-   * @param v The array of vectors to split the data into
-   */
-  template<unsigned int N>
-  void split(Vector<T, Par> &v[N]) {
-#pragma HLS INLINE
-    for(int i = 0; i < length_; i++) {
-#pragma HLS PIPELINE
-      WideType<T, Par> value = read();
-      for(int j = 0; j < N; j++) {
-#pragma HLS UNROLL
-        v[j].write(value);
-      }
-    }
-  }
+  //   /**
+  //    * Splits the vector into N vectors. Consumes the contents of the vector.
+  //    *
+  //    * @param v The array of vectors to split the data into
+  //    */
+  //   template<unsigned int N>
+  //   void split(Vector<T, Par> &v[N]) {
+  // #pragma HLS INLINE
+  //     for(int i = 0; i < length_; i++) {
+  // #pragma HLS PIPELINE
+  //       WideType<T, Par> value = read();
+  //       for(int j = 0; j < N; j++) {
+  // #pragma HLS UNROLL
+  //         v[j].write(value);
+  //       }
+  //     }
+  //   }
 
   /**
    * Duplicates the vector N times. Consumes the contents of the vector.
-   * 
+   *
    * @param v The vector to duplicate the data into
    * @param n The number of times to duplicate the vector
    */
@@ -178,10 +219,11 @@ class Vector {
     for (unsigned int i = 0; i < n; i++) {
       for (unsigned int j = 0; j < length_; j++) {
 #pragma HLS PIPELINE
+        WideType<T, Par> value;
         if (i == 0) {
-          WideType<T, Par> value = read();
+          value = read();
         } else {
-          WideType<T, Par> value = ring_buffer.read();
+          value = ring_buffer.read();
         }
         if (i < n - 1) {
           ring_buffer.write(value);
@@ -200,7 +242,7 @@ class Vector {
 
   // TODO: Add support for reshaping and slicing. With the former returning a
   // matrix potentially
-}
+};
 
 /**
  * A wrapper for a stream of data representing a general matrix.
@@ -226,32 +268,33 @@ class Matrix {
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
-    assert(Rows > 0, "Rows must be greater than 0");
-    assert(Cols > 0, "Cols must be greater than 0");
+    assert(("Rows must be greater than 0", Rows > 0));
+    assert(("Cols must be greater than 0", Cols > 0));
 
     // TODO: Maybe permit non multiples of Par? And just pad it with zeros
     // internally.
     if (Order == RowMajor) {
-      assert(Cols % Par == 0, "Cols must be a multiple of Par");
+      assert(("Cols must be a multiple of Par", Cols % Par == 0));
     } else {
-      assert(Rows % Par == 0, "Rows must be a multiple of Par");
+      assert(("Rows must be a multiple of Par", Rows % Par == 0));
     }
 #endif
   }
 
-  Matrix(hls::stream<WideType<T, Par>> &data, unsigned int Rows, unsigned int Cols) : data(data), rows_(Rows), cols_(Cols) {
+  Matrix(hls::stream<WideType<T, Par>> &data, unsigned int Rows, unsigned int Cols)
+      : data(data), rows_(Rows), cols_(Cols) {
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
-    assert(Rows > 0, "Rows must be greater than 0");
-    assert(Cols > 0, "Cols must be greater than 0");
+    assert(("Rows must be greater than 0", Rows > 0));
+    assert(("Cols must be greater than 0", Cols > 0));
 
     // TODO: Maybe permit non multiples of Par? And just pad it with zeros
     // internally.
     if (Order == RowMajor) {
-      assert(Cols % Par == 0, "Cols must be a multiple of Par");
+      assert(("Cols must be a multiple of Par", Cols % Par == 0));
     } else {
-      assert(Rows % Par == 0, "Rows must be a multiple of Par");
+      assert(("Rows must be a multiple of Par", Rows % Par == 0));
     }
 #endif
   }
@@ -329,7 +372,7 @@ class Matrix {
 
   // TODO: Add support for reshaping and slicing. With the former returning a
   // vector potentially
-}
+};
 
 /**
  * A wrapper for a stream of data representing a banded matrix.
@@ -341,9 +384,8 @@ class Matrix {
  * @tparam SubDiagonals The number of subdiagonals in the matrix.
  * @tparam SupDiagonals The number of superdiagonals in the matrix.
  */
-template <typename T, unsigned int Par,
-          unsigned int SubDiagonals, unsigned int SupDiagonals>
-class BandedMatrix : public Matrix<T, Par>;
+template <typename T, unsigned int Par, unsigned int SubDiagonals, unsigned int SupDiagonals>
+class BandedMatrix : public Matrix<T, Par> {};
 
 /**
  * A wrapper for a stream of data representing a diagonal matrix. This is
@@ -370,9 +412,8 @@ using DiagonalMatrix = BandedMatrix<T, Par, 0, 0>;
  * ColMajor.
  * @tparam UpLo Whether the matrix is upper or lower triangular.
  */
-template <typename T, unsigned int Par, MajorOrder Order = RowMajor,
-          UpperLower UpLo = Upper>
-class TriangularMatrix : public Matrix<T, Par, Order>;
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor, UpperLower UpLo = Upper>
+class TriangularMatrix : public Matrix<T, Par, Order> {};
 
 /**
  * A wrapper for a stream of data representing a triangular banded matrix.
@@ -385,11 +426,9 @@ class TriangularMatrix : public Matrix<T, Par, Order>;
  * @tparam Diagonals The number of subdiagonals in the matrix.
  * @tparam UpLo Whether the matrix is upper or lower triangular.
  */
-template <typename T, unsigned int Par, unsigned int Diagonals,
-          UpperLower UpLo = Upper>
-class TriangularBandedMatrix
-    : public BandedMatrix<T, Par, constexpr(UpLo == Upper) ? 0 : Diagonals,
-                          constexpr(UpLo == Lower) ? 0 : Diagonals>;
+template <typename T, unsigned int Par, unsigned int Diagonals, UpperLower UpLo = Upper>
+class TriangularBandedMatrix : public BandedMatrix<T, Par, (UpLo == Upper) ? 0 : Diagonals,
+                                                   (UpLo == Lower) ? 0 : Diagonals> {};
 
 // TODO: Add support for unit triangular matrices and their banded equivalents
 
@@ -405,9 +444,8 @@ class TriangularBandedMatrix
  * ColMajor.
  * @tparam UpLo Whether the matrix is upper or lower triangular.
  */
-template <typename T, unsigned int Par, MajorOrder Order = RowMajor,
-          UpperLower UpLo = Upper>
-class SymmetricMatrix : public Matrix<T, Par, Order>;
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor, UpperLower UpLo = Upper>
+class SymmetricMatrix : public Matrix<T, Par, Order> {};
 
 /**
  * A wrapper for a stream of data representing a symmetric banded matrix.
@@ -420,9 +458,8 @@ class SymmetricMatrix : public Matrix<T, Par, Order>;
  * (they are equal).
  * @tparam UpLo Whether the matrix is upper or lower triangular.
  */
-template <typename T, unsigned int Par, unsigned int Diagonals,
-          UpperLower UpLo = Upper>
-class SymmetricBandedMatrix : public BandedMatrix<T, Par, Diagonals, Diagonals>;
+template <typename T, unsigned int Par, unsigned int Diagonals, UpperLower UpLo = Upper>
+class SymmetricBandedMatrix : public BandedMatrix<T, Par, Diagonals, Diagonals> {};
 
 /**
  * A wrapper for a stream of data representing a Hermitian matrix.
@@ -437,9 +474,8 @@ class SymmetricBandedMatrix : public BandedMatrix<T, Par, Diagonals, Diagonals>;
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
  */
-template <typename T, unsigned int Par, MajorOrder Order = RowMajor,
-          UpperLower UpLo = Upper>
-class HermitianMatrix : public Matrix<T, Par, Order>;
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor, UpperLower UpLo = Upper>
+class HermitianMatrix : public Matrix<T, Par, Order> {};
 
 /**
  * A wrapper for a stream of data representing a Hermitian banded matrix.
@@ -454,9 +490,8 @@ class HermitianMatrix : public Matrix<T, Par, Order>;
  * (they are equal).
  * @tparam UpLo Whether the matrix is upper or lower triangular.
  */
-template <typename T, unsigned int Par, unsigned int Diagonals,
-          UpperLower UpLo = Upper>
-class HermitianBandedMatrix : public BandedMatrix<T, Par, Diagonals, Diagonals>;
+template <typename T, unsigned int Par, unsigned int Diagonals, UpperLower UpLo = Upper>
+class HermitianBandedMatrix : public BandedMatrix<T, Par, Diagonals, Diagonals> {};
 
 }  // namespace blas
 }  // namespace dyfc
