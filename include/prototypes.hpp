@@ -27,8 +27,6 @@ namespace blas {
 /*
  * ===========================================================================
  * Prototypes for level 1 BLAS functions. Vector ops.
- * Size and type information is removed in favor of parameterized types and
- * sizes.
  * ===========================================================================
  */
 
@@ -41,16 +39,15 @@ namespace blas {
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Length The length of the vector.
  *
+ * @param[in]  n The length of the vectors x and y.
  * @param[in]  alpha The scalar to multiply the input vector x by.
  * @param[in]  x The input vector to multiply.
  * @param[in]  y The input vector to add to the result.
  * @param[out] result The output vector to write to.
  */
-template <typename T, unsigned int Par, unsigned int Length>
-void axpy(T alpha, Vector<T, Par, Length> &x, Vector<T, Par, Length> &y,
-          Vector<T, Par, Length> &result);
+template <typename T, unsigned int Par>
+void axpy(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y, Vector<T, Par> &result);
 // TODO: Specific implementations for the standard: caxpy, daxpy, saxpy, zaxpy
 
 /**
@@ -62,14 +59,14 @@ void axpy(T alpha, Vector<T, Par, Length> &x, Vector<T, Par, Length> &y,
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Length The length of the vector.
  *
+ * @param[in]  n The length of the vectors x and y.
  * @param[in]  alpha The scalar to multiply the input vector x by.
  * @param[in]  x The input vector to multiply.
  * @param[out] result The output vector to write to.
  */
-template <typename T, unsigned int Par, unsigned int Length>
-void scal(T alpha, Vector<T, Par, Length> &x, Vector<T, Par, Length> &result);
+template <typename T, unsigned int Par>
+void scal(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &result);
 // TODO: Specific implementations for the standard: cscal, csscal, dscal, sscal,
 // zdscal, zscal
 
@@ -77,8 +74,8 @@ void scal(T alpha, Vector<T, Par, Length> &x, Vector<T, Par, Length> &result);
  * The BLAS copy operation is nonsensical on streams. If you want to slice or
  * reshape a vector/matrix, please use the provided class methods.
  */
-template <typename T, unsigned int Par, unsigned int Length>
-void copy(Vector<T, Par, Length> x, unsigned int incX, Vector<T, Par, Length> result) {
+template <typename T, unsigned int Par>
+void copy(Vector<T, Par> x, unsigned int incX, Vector<T, Par> result) {
   assert(("Copy operation not possible on streams", false));
 }
 
@@ -86,8 +83,8 @@ void copy(Vector<T, Par, Length> x, unsigned int incX, Vector<T, Par, Length> re
  * The BLAS swap operation is not possible on streams, so this function will
  * always assert false.
  */
-template <typename T, unsigned int Par, unsigned int Length>
-void swap(Vector<T, Par, Length> &x, Vector<T, Par, Length> &y) {
+template <typename T, unsigned int Par,>
+void swap(Vector<T, Par> &x, Vector<T, Par> &y) {
   assert(("Swap operation not possible on streams", false));
 }
 
@@ -100,14 +97,14 @@ void swap(Vector<T, Par, Length> &x, Vector<T, Par, Length> &y) {
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Length The length of the vector.
  *
+ * @param[in]  n The length of the vectors x and y.
  * @param[in]  x The input vector to multiply.
  * @param[in]  y The input vector to multiply.
  * @param[out] result The output value to write to.
  */
-template <typename T, unsigned int Par, unsigned int Length>
-void dot(Vector<T, Par, Length> &x, Vector<T, Par, Length> &y, T &result);
+template <typename T, unsigned int Par>
+void dot(Vector<T, Par> &x, Vector<T, Par> &y, T &result);
 // Special implementation of dot where T is a complex number
 void dotu();
 // Special implementation of dotc where we take the conjugate of x before
@@ -125,13 +122,13 @@ void dotc();
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Length The length of the vector.
  *
+ * @param[in]  n The length of the vectors x and y.
  * @param[in]  x The input vector to compute the norm of.
  * @param[out] result The output value to write to.
  */
-template <typename T, unsigned int Par, unsigned int Length>
-void nrm2(Vector<T, Par, Length> &x, T &result);
+template <typename T, unsigned int Par>
+void nrm2(unsigned int n, Vector<T, Par> &x, T &result);
 // TODO: Specific implementations for the standard: dnrm2, dznrm2, scnrm2, snrm2
 
 /**
@@ -143,13 +140,13 @@ void nrm2(Vector<T, Par, Length> &x, T &result);
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Length The length of the vector.
  *
+ * @param[in]  n The length of the vectors x and y.
  * @param[in]  x The input vector to compute the sum of magnitudes of.
  * @param[out] result The output value to write to.
  */
-template <typename T, unsigned int Par, unsigned int Length>
-void asum(Vector<T, Par, Length> &x, T &result);
+template <typename T, unsigned int Par>
+void asum(unsigned int n, Vector<T, Par> &x, T &result);
 // TODO: Specific implementations for the standard: sasum, dasum scasum, dzasum
 
 /**
@@ -161,13 +158,13 @@ void asum(Vector<T, Par, Length> &x, T &result);
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Length The length of the vector.
  *
+ * @param[in]  n The length of the vectors x and y.
  * @param[in]  x The input vector to compute the prefix sum of.
  * @param[out] result The output vector to write to.
  */
-template <typename T, unsigned int Par, unsigned int Length>
-void asum(Vector<T, Par, Length> &x, Vector<T, Par, Length> &result);
+template <typename T, unsigned int Par>
+void asum(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &result);
 
 /**
  * Finds the index of the element with maximum absolute value.
@@ -176,13 +173,13 @@ void asum(Vector<T, Par, Length> &x, Vector<T, Par, Length> &result);
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Length The length of the vector.
  *
+ * @param[in]  n The length of the vectors x and y.
  * @param[in]  x The input vector to find the maximum element of.
  * @param[out] result The index that the maximum element was at
  */
-template <typename T, unsigned int Par, unsigned int Length>
-void amax(Vector<T, Par, Length> &x, unsigned int &result);
+template <typename T, unsigned int Par>
+void amax(unsigned int n, Vector<T, Par> &x, unsigned int &result);
 // TODO: Specific implementations for the standard: icamax, idamax, isamax,
 // izamax
 
@@ -239,8 +236,8 @@ void rotg(Complex<T> a, Complex<T> b, T &c, Complex<T> &s, Complex<T> &r);
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Length The length of the vectors.
  *
+ * @param[in]  n The length of the vectors x and y.
  * @param[in]  x Set of x coordinates of points
  * @param[in]  y Set of y coordinates of points
  * @param[in]  c The cosine of the Givens rotation
@@ -248,15 +245,15 @@ void rotg(Complex<T> a, Complex<T> b, T &c, Complex<T> &s, Complex<T> &r);
  * @param[out] xr The x coordinates of the rotated points
  * @param[out] yr The y coordinates of the rotated points
  */
-template <typename T, unsigned int Par, unsigned int Length>
-void rot(Vector<T, Par, Length> &x, Vector<T, Par, Length> &y, T &c, T &s,
-         Vector<T, Par, Length> &xr, Vector<T, Par, Length> &yr);
-template <typename T, unsigned int Par, unsigned int Length>
-void rot(Vector<Complex<T>, Par, Length> &x, Vector<Complex<T>, Par, Length> &y, T &c,
-         Complex<T> &s, Vector<Complex<T>, Par, Length> &xr, Vector<Complex<T>, Par, Length> &yr);
-template <typename T, unsigned int Par, unsigned int Length>
-void rot(Vector<Complex<T>, Par, Length> &x, Vector<Complex<T>, Par, Length> &y, T &c, T &s,
-         Vector<Complex<T>, Par, Length> &xr, Vector<Complex<T>, Par, Length> &yr);
+template <typename T, unsigned int Par>
+void rot(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &y, T &c, T &s,
+         Vector<T, Par> &xr, Vector<T, Par> &yr);
+template <typename T, unsigned int Par>
+void rot(unsigned int n, Vector<Complex<T>, Par> &x, Vector<Complex<T>, Par> &y, T &c,
+         Complex<T> &s, Vector<Complex<T>, Par> &xr, Vector<Complex<T>, Par> &yr);
+template <typename T, unsigned int Par>
+void rot(unsigned int n, Vector<Complex<T>, Par> &x, Vector<Complex<T>, Par> &y, T &c, T &s,
+         Vector<Complex<T>, Par> &xr, Vector<Complex<T>, Par> &yr);
 // TODO: Make special cases for:
 // 1. Real x, y, c, s
 // 2. Complex x, y, c, s
@@ -297,7 +294,6 @@ void rot(Vector<Complex<T>, Par, Length> &x, Vector<Complex<T>, Par, Length> &y,
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Length The length of the vector.
  *
  * @param d1 The scaling factor for the x-coordinate of the input vector
  * @param d2 The scaling factor for the y-coordinate of the input vector
@@ -308,8 +304,8 @@ void rot(Vector<Complex<T>, Par, Length> &x, Vector<Complex<T>, Par, Length> &y,
  * @param xr The x-coordinate of the rotated vector before scaling
  * @param params The parameters for the Givens rotation
  */
-template <typename T, unsigned int Par, unsigned int Length>
-void rotmg(T d1, T d2, T x1, T y1, T &d1r, T &d2r, T &xr, Vector<T, Par, 5> &params);
+template <typename T, unsigned int Par>
+void rotmg(T d1, T d2, T x1, T y1, T &d1r, T &d2r, T &xr, WideType<T, 5> &params);
 // TODO: Add implementation for complex numbers, just to throw an unsupported
 // warning
 // TODO: Specific implementations for the standard: drotmg, srotmg
@@ -329,17 +325,17 @@ void rotmg(T d1, T d2, T x1, T y1, T &d1r, T &d2r, T &xr, Vector<T, Par, 5> &par
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Length The length of the vectors.
  *
+ * @param[in]  n The length of the vectors x and y.
  * @param[in]  x The x coordinates of a set of points to rotate
  * @param[in]  y The y coordinates of a set of points to rotate
  * @param[in]  H The Givens rotation matrix
  * @param[out] xr The x coordinates of the rotated points
  * @param[out] yr The y coordinates of the rotated points
  */
-template <typename T, unsigned int Par, unsigned int Length>
-void rotm(Vector<T, Par, Length> &x, Vector<T, Par, Length> &y, Vector<T, Par, 5> &H,
-          Vector<T, Par, Length> &xr, Vector<T, Par, Length> &yr);
+template <typename T, unsigned int Par>
+void rotm(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &y, WideType<T, 5> &H,
+          Vector<T, Par> &xr, Vector<T, Par> &yr);
 // TODO: Add implementation for complex numbers, just to throw an unsupported
 // warning
 // TODO: Specific implementations for the standard: drotm, srotm
@@ -347,8 +343,6 @@ void rotm(Vector<T, Par, Length> &x, Vector<T, Par, Length> &y, Vector<T, Par, 5
 /*
  * ===========================================================================
  * Prototypes for level 2 BLAS - Vector Matrix ops
- * Size and type information is removed in favor of parameterized types and
- * sizes.
  * ===========================================================================
  */
 
@@ -361,11 +355,10 @@ void rotm(Vector<T, Par, Length> &x, Vector<T, Par, Length> &y, Vector<T, Par, 5
  * type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows in the matrix and the length of the resulting
- * vector
- * @tparam Cols The number of columns in the matrix and the length of the input
- * vector
  *
+ * @param[in]  m The number of cols in the matrix A and the length of the vector y.
+ *             Ignored if A is Triangular, Symmetric, or Hermitian, as these are square matrices.
+ * @param[in]  n The number of rows in the matrix A and the length of the output vector r.
  * @param[in]  alpha The scalar to multiply the input matrix A by.
  * @param[in]  A The input matrix to multiply.
  * @param[in]  x The input vector to multiply.
@@ -373,9 +366,9 @@ void rotm(Vector<T, Par, Length> &x, Vector<T, Par, Length> &y, Vector<T, Par, 5
  * @param[in]  y The input vector to add to the result.
  * @param[out] result The output vector to write to.
  */
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Cols, Order = RowMajor>
-void mv(T alpha, Matrix<T, Par, Rows, Cols, Order> &A, Vector<T, Par, Cols> &x, T beta,
-        Vector<T, Par, Rows> &y, Vector<T, Par, Rows> &result);
+template <typename T, unsigned int Par, Order = RowMajor>
+void mv(unsigned int m, unsigned int n, T alpha, Matrix<T, Par, Order> &A, Vector<T, Par> &x, T beta,
+        Vector<T, Par> &y, Vector<T, Par> &result);
 // TODO: Subtemplates for gemv, hemv, symv, gbmv, hbmv, sbmv, hpmv, spmv
 // TODO: Specific implementations for the standard: cgemv, dgemv, sgemv, zgemv,
 // chemv, zhemv,
@@ -397,11 +390,10 @@ void mv(T alpha, Matrix<T, Par, Rows, Cols, Order> &A, Vector<T, Par, Cols> &x, 
  * type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows in the matrix and the length of the resulting
- * vector
- * @tparam Cols The number of columns in the matrix and the length of the input
- * vector
  *
+ * @param[in]  m The number of cols in the matrix A and the length of the vector y.
+ *            Ignored if A is Triangular, Symmetric, or Hermitian, as these are square matrices.
+ * @param[in]  n The number of rows in the matrix A and the length of the output vector r.
  * @param[in]  alpha The scalar to multiply the input matrix A by.
  * @param[in]  A The input matrix to multiply.
  * @param[in]  x The input vector to multiply.
@@ -409,9 +401,9 @@ void mv(T alpha, Matrix<T, Par, Rows, Cols, Order> &A, Vector<T, Par, Cols> &x, 
  * @param[in]  y The input vector to add to the result.
  * @param[out] result The output vector to write to.
  */
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Cols, Order = RowMajor>
-void mv(T alpha, Matrix<T, Par, Rows, Cols, Order> &A, Vector<T, Par, Cols> &x,
-        Vector<T, Par, Rows> &result);
+template <typename T, unsigned int Par, Order = RowMajor>
+void mv(unsigned int m, unsigned int n, T alpha, Matrix<T, Par, Order> &A, Vector<T, Par> &x,
+        Vector<T, Par> &result);
 // TODO: Subtemplate for trmv, tbmv, tpmv
 // TODO: Specific implementations for the standard: strmv, dtrmv, ctrmv, ztrmv,
 // stbmv, dtbmv, ctbmv, ztbmv,
@@ -427,17 +419,16 @@ void mv(T alpha, Matrix<T, Par, Rows, Cols, Order> &A, Vector<T, Par, Cols> &x,
  * type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows in the matrix and the length of the resulting
- * vector
  *
+ * @param[in]  n The number of rows/columns in the matrix A and the length of the vectors x and r.
  * @param[in]  A The input triangular matrix to multiply.
  * @param[in]  x The input vector to multiply.
  * @param[out] result The output vector to write to.
  */
-template <typename T, unsigned int Par, unsigned int Rows, Order = RowMajor,
+template <typename T, unsigned int Par, Order = RowMajor,
           UpperLower UpLo = Upper>
-void trmv(TriangularMatrix<T, Par, Rows, Order, UpLo> &A, Vector<T, Par, Rows> &x,
-          Vector<T, Par, Rows> &result);
+void trmv(unsigned int n, TriangularMatrix<T, Par, Order, UpLo> &A, Vector<T, Par> &x,
+          Vector<T, Par> &result);
 // TODO: Subtemplates for trmv, tbmv, tpmv
 // TODO: Specific implementations for the standard: ctrmv, dtrmv, strmv, ztrmv,
 // ctbmv, dtbmv, stbmv, ztbmv, ctpmv, dtpmv, stpmv, ztpmv
@@ -457,17 +448,16 @@ void trmv(TriangularMatrix<T, Par, Rows, Order, UpLo> &A, Vector<T, Par, Rows> &
  * type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows in the matrix and the length of the resulting
- * vector
  *
+ * @param[in]  n The number of rows/columns in the matrix A and the length of the vectors x and r.
  * @param[in]  A The input triangular matrix to solve.
  * @param[in]  x The input vector to solve for.
  * @param[out] result The output vector to write to.
  */
-template <typename T, unsigned int Par, unsigned int Rows, Order = RowMajor,
+template <typename T, unsigned int Par, Order = RowMajor,
           UpperLower UpLo = Upper>
-void trsv(TriangularMatrix<T, Par, Rows, Order, UpLo> &A, Vector<T, Par, Rows> &x,
-          Vector<T, Par, Rows> &result);
+void trsv(unsigned int n, TriangularMatrix<T, Par, Order, UpLo> &A, Vector<T, Par> &x,
+          Vector<T, Par> &result);
 // TODO: Subtemplates for trsv, tbsv, tpsv
 // TODO: Specific implementations for the standard: ctrsv, dtrsv, strsv, ztrsv,
 // ctbsv, dtbsv, stbsv, ztbsv,
@@ -484,24 +474,21 @@ void trsv(TriangularMatrix<T, Par, Rows, Order, UpLo> &A, Vector<T, Par, Rows> &
  * type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows in the matrix, and the length of the input
- * vector x.
- * @tparam Cols The number of columns in the matrix, and the length of the input
- * vector y.
  *
+ * @param[in]  m The number of rows in the matrix A and the length of the input vector x.
+ * @param[in]  n The number of columns in the matrix A and the length of the input vector y.
  * @param[in]  alpha The scalar to multiply the outer product of x and y by.
  * @param[in]  x The input vector to multiply.
  * @param[in]  y The input vector to multiply.
  * @param[in]  A The input matrix to add to.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Cols>
-void ger(T alpha, Vector<T, Par, Rows> &x, Vector<T, Par, Cols> &y, Matrix<T, Par, Rows, Cols> &A,
-         Matrix<T, Par, Rows, Cols> &result);
+template <typename T, unsigned int Par>
+void ger(unsigned int m, unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y, Matrix<T, Par> &A,
+         Matrix<T, Par> &result);
 // TODO: Subtemplates for syr, her, spr, hpr
 // TODO: Specific implementations for the standard: cgeru, zgeru, dger, sger,
-// ssyr, dsyr, cher, zher,
-//       sspr, dspr, chpr, zhpr
+// ssyr, dsyr, cher, zher, sspr, dspr, chpr, zhpr
 
 /**
  * Performs a rank-1 update of a general matrix with complex numbers, using the
@@ -513,24 +500,22 @@ void ger(T alpha, Vector<T, Par, Rows> &x, Vector<T, Par, Cols> &y, Matrix<T, Pa
  * type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows in the matrix, and the length of the input
- * vector x.
- * @tparam Cols The number of columns in the matrix, and the length of the input
- * vector y.
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
  *
+ * @param[in]  m The number of rows in the matrix A and the length of the input vector x.
+ * @param[in]  n The number of columns in the matrix A and the length of the input vector y.
  * @param[in]  alpha The scalar to multiply the outer product of x and y by.
  * @param[in]  x The input vector to multiply.
  * @param[in]  y The input vector to multiply.
  * @param[in]  A The input matrix to add to.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Cols,
+template <typename T, unsigned int Par,
           MajorOrder Order = RowMajorOrder>
-void gerc(T alpha, Vector<Complex<T>, Par, Rows> &x, Vector<Complex<T>, Par, Cols> &y,
-          Matrix<Complex<T>, Par, Rows, Cols, Order> &A,
-          Matrix<Complex<T>, Par, Rows, Cols, Order> &result);
+void gerc(unsigned int m, unsigned int n, T alpha, Vector<Complex<T>, Par> &x, Vector<Complex<T>, Par> &y,
+          Matrix<Complex<T>, Par, Order> &A,
+          Matrix<Complex<T>, Par, Order> &result);
 // TODO: Specific implementations for the standard: cgerc, zgerc
 
 /**
@@ -542,23 +527,22 @@ void gerc(T alpha, Vector<Complex<T>, Par, Rows> &x, Vector<Complex<T>, Par, Col
  * type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows in the matrix, and the length of the input
- * vectors x and z.
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
  * @tparam UpLo Whether the matrix is upper or lower triangular.
  *
+ * @param[in]  n The number of rows/cols in the matrix A and the length of the input vector x and y.
  * @param[in]  alpha The scalar to multiply the outer product of x and y by.
  * @param[in]  x The input vector to multiply.
  * @param[in]  y The input vector to multiply.
  * @param[in]  A The input matrix to add to.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, unsigned int Rows, MajorOrder Order = RowMajorOrder,
+template <typename T, unsigned int Par, MajorOrder Order = RowMajorOrder,
           UpperLower UpLo = Upper>
-void syr2(T alpha, Vector<T, Par, Rows> &x, Vector<T, Par, Rows> &y,
-          SymmetricMatrix<T, Par, Rows, Order, UpLo> &A,
-          SymmetricMatrix<T, Par, Rows, Order, UpLo> &result);
+void syr2(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y,
+          SymmetricMatrix<T, Par, Order, UpLo> &A,
+          SymmetricMatrix<T, Par, Order, UpLo> &result);
 // TODO: Specific implementations for the standard: dsyr2, ssyr2, sspr2, dspr2
 
 /**
@@ -570,24 +554,29 @@ void syr2(T alpha, Vector<T, Par, Rows> &x, Vector<T, Par, Rows> &y,
  * type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows in the matrix, and the length of the input
- * vectors x and z.
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
  * @tparam UpLo Whether the matrix is upper or lower triangular.
  *
+ * @param[in]  n The number of rows/cols in the matrix A and the length of the input vector x and y.
  * @param[in]  alpha The scalar to multiply the outer product of x and y by.
  * @param[in]  x The input vector to multiply.
  * @param[in]  y The input vector to multiply.
  * @param[in]  A The input matrix to add to.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, unsigned int Rows, MajorOrder Order = RowMajorOrder,
+template <typename T, unsigned int Par, MajorOrder Order = RowMajorOrder,
           UpperLower UpLo = Upper>
-void her2(T alpha, Vector<Complex<T>, Par, Rows> &x, Vector<Complex<T>, Par, Rows> &y,
-          HermitianMatrix<Complex<T>, Par, Rows, Order, UpLo> &A,
-          HermitianMatrix<Complex<T>, Par, Rows, Order, UpLo> &result);
+void her2(unsigned int n, T alpha, Vector<Complex<T>, Par> &x, Vector<Complex<T>, Par> &y,
+          HermitianMatrix<Complex<T>, Par, Order, UpLo> &A,
+          HermitianMatrix<Complex<T>, Par, Order, UpLo> &result);
 // TODO: Specific implementations for the standard: cher2, zher2, chpr2, zhpr2
+
+/*
+ * ===========================================================================
+ * Prototypes for level 3 BLAS - Matrix Matrix ops
+ * ===========================================================================
+ */
 
 /**
  * Performs matrix multiplication
@@ -598,10 +587,6 @@ void her2(T alpha, Vector<Complex<T>, Par, Rows> &x, Vector<Complex<T>, Par, Row
  * type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam M The number of rows in the matrix A and the output matrix result.
- * @tparam K The number of columns in the matrix A and the number of rows in the
- * matrix B.
- * @tparam N The number of columns in the matrix B and the output matrix result.
  * @tparam OrderA The major order of the matrix A. Can be either RowMajor or
  * ColMajor.
  * @tparam OrderB The major order of the matrix B. Can be either RowMajor or
@@ -609,6 +594,9 @@ void her2(T alpha, Vector<Complex<T>, Par, Rows> &x, Vector<Complex<T>, Par, Row
  * @tparam UpLo Whether the matrix is upper or lower triangular. This is ignored
  * for general matrices
  *
+ * @param[in]  m The number of rows in the matrix A and the output matrix result.
+ * @param[in]  n The number of columns in the matrix B and the output matrix result.
+ * @param[in]  k The number of columns in the matrix A and the number of rows in the matrix B.
  * @param[in]  alpha The scalar to multiply the input matrix A by.
  * @param[in]  A The input matrix to multiply.
  * @param[in]  B The input matrix to multiply.
@@ -616,10 +604,10 @@ void her2(T alpha, Vector<Complex<T>, Par, Rows> &x, Vector<Complex<T>, Par, Row
  * @param[in]  C The input matrix to add to.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, unsigned int M, unsigned int K, unsigned int N,
+template <typename T, unsigned int Par,
           OrderA = RowMajor, OrderB = ColMajor, UpperLower UpLo = Upper>
-void mm(T alpha, Matrix<T, Par, M, K, OrderA> &A, Matrix<T, Par, K, N, OrderB> &B, T beta,
-        Matrix<T, Par, M, N, OrderA> &C, Matrix<T, Par, M, N, OrderA> &result);
+void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, OrderA> &A, Matrix<T, Par, OrderB> &B, T beta,
+        Matrix<T, Par, OrderA> &C, Matrix<T, Par, OrderA> &result);
 // TODO: Subtemplates for gemm, hemm, symm, gemmtr
 // TODO: Specific implementations for the standard: cgemm, dgemm, sgemm, zgemm,
 // sgemmtr, dgemmtr, cgemmtr, zgemmtr,
@@ -638,10 +626,6 @@ void mm(T alpha, Matrix<T, Par, M, K, OrderA> &A, Matrix<T, Par, K, N, OrderB> &
  * type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam M The number of rows in the matrix A and the output matrix result.
- * @tparam K The number of columns in the matrix A and the number of rows in the
- * matrix B.
- * @tparam N The number of columns in the matrix B and the output matrix result.
  * @tparam OrderA The major order of the matrix A. Can be either RowMajor or
  * ColMajor.
  * @tparam OrderB The major order of the matrix B. Can be either RowMajor or
@@ -649,15 +633,18 @@ void mm(T alpha, Matrix<T, Par, M, K, OrderA> &A, Matrix<T, Par, K, N, OrderB> &
  * @tparam UpLo Whether the matrix is upper or lower triangular. This is ignored
  * for general matrices
  *
+ * @param[in]  m The number of rows in the matrix A and the output matrix result.
+ * @param[in]  n The number of columns in the matrix B and the output matrix result.
+ * @param[in]  k The number of columns in the matrix A and the number of rows in the matrix B.
  * @param[in]  alpha The scalar to multiply the input matrix A by.
  * @param[in]  A The input matrix to multiply.
  * @param[in]  B The input matrix to multiply.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, unsigned int M, unsigned int K, unsigned int N,
+template <typename T, unsigned int Par,
           OrderA = RowMajor, OrderB = ColMajor, UpperLower UpLo = Upper>
-void mm(T alpha, Matrix<T, Par, M, K, OrderA> &A, Matrix<T, Par, K, N, OrderB> &B,
-        Matrix<T, Par, M, N, OrderA> &result);
+void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, OrderA> &A, Matrix<T, Par, OrderB> &B,
+        Matrix<T, Par, OrderA> &result);
 // TODO: Subtemplates for gemm, hemm, symm, trmm
 // TODO: Specific implementations for the standard: cgemm, dgemm, sgemm, zgemm,
 // strmm, dtrmm, ctrmm, ztrmm, chemm, zhemm, csymm, zsymm, ssymm, dsymm
@@ -672,22 +659,21 @@ void mm(T alpha, Matrix<T, Par, M, K, OrderA> &A, Matrix<T, Par, K, N, OrderB> &
  * type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows in the matrix A and the output matrix result.
- * @tparam Cols The number of columns in the matrix B and the output matrix
- * result.
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
  * @tparam UpLo Whether the matrix is upper or lower triangular.
  *
+ * @param[in]  m The number of rows in the matrices A, B, and the output matrix result.
+ * @param[in]  n The number of columns in the matrix B and the output matrix result.
  * @param[in]  alpha The scalar to multiply the input matrix A by.
- * @param[in]  A The input triangular matrix to solve.
- * @param[in]  B The input matrix to solve for.
- * @param[out] result The output matrix to write to.
+ * @param[in]  A The input triangular matrix to solve. Dimensions are m x m.
+ * @param[in]  B The input matrix to solve for. Dimensions are m x n.
+ * @param[out] result The output matrix to write to. Dimensions are m x n.
  */
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Cols, Order = RowMajor,
+template <typename T, unsigned int Par, Order = RowMajor,
           UpperLower UpLo = Upper>
-void trsm(T alpha, TriangularMatrix<T, Par, Rows, Order, UpLo> &A, Matrix<T, Par, Rows, Cols> &B,
-          Matrix<T, Par, Rows, Cols> &result);
+void trsm(unsigned int m, unsigned int n, T alpha, TriangularMatrix<T, Par, Order, UpLo> &A, Matrix<T, Par> &B,
+          Matrix<T, Par> &result);
 // TODO: Specific implementations for the standard: ctrsm, dtrsm, strsm, ztrsm
 // TODO: Original specificaiton takes options to pre-transpose A and B, as well
 // as take their conjugate transpose
@@ -701,23 +687,23 @@ void trsm(T alpha, TriangularMatrix<T, Par, Rows, Order, UpLo> &A, Matrix<T, Par
  * type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows in the matrix A and the output matrix result.
- * @tparam Cols The number of columns in the matrix A.
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
  * @tparam UpLo Whether the matrix C is upper or lower triangular.
  *
+ * @param[in]  n The number of rows in the matrices A, C, and the output matrix result.
+ * @param[in]  k The number of columns in the matrix A.
  * @param[in]  alpha The scalar to multiply the outer product of A*A^T by.
  * @param[in]  A The input matrix to multiply.
  * @param[in]  beta The scalar to multiply the input matrix C by.
  * @param[in]  C The input matrix to add to. Is square and symmetric.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Cols, Order = RowMajor,
+template <typename T, unsigned int Par, Order = RowMajor,
           UpperLower UpLo = Upper>
-void syrk(T alpha, Matrix<T, Par, Rows, Cols, Order> &A, T beta,
-          SymmetricMatrix<T, Par, Rows, Order, UpLo> &C,
-          SymmetricMatrix<T, Par, Rows, Order, UpLo> &result);
+void syrk(unsigned int n, unsigned int k, T alpha, Matrix<T, Par, Order> &A, T beta,
+          SymmetricMatrix<T, Par, Order, UpLo> &C,
+          SymmetricMatrix<T, Par, Order, UpLo> &result);
 // TODO: Specific implementations for the standard: csyrk, dsyrk, ssyrk, zsyrk
 
 /**
@@ -729,24 +715,23 @@ void syrk(T alpha, Matrix<T, Par, Rows, Cols, Order> &A, T beta,
  * type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows in the matrices, A, C, and the output matrix
- * result.
- * @tparam Cols The number of columns in the matrix A.
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
  * @tparam UpLo Whether the matrix C is upper or lower triangular.
  *
+ * @param[in]  n The number of rows in the matrices A, C, and the output matrix result.
+ * @param[in]  k The number of columns in the matrix A.
  * @param[in]  alpha The scalar to multiply the outer product of A*conj(A)^T by.
  * @param[in]  A The input matrix to multiply.
  * @param[in]  beta The scalar to multiply the input matrix C by.
  * @param[in]  C The input matrix to add to. Is square and Hermitian.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Cols, Order = RowMajor,
+template <typename T, unsigned int Par, Order = RowMajor,
           UpperLower UpLo = Upper>
-void herk(T alpha, Matrix<Complex<T>, Par, Rows, Cols, Order> &A, T beta,
-          HermitianMatrix<Complex<T>, Par, Rows, Order, UpLo> &C,
-          HermitianMatrix<Complex<T>, Par, Rows, Order, UpLo> &result);
+void herk(unsigned int n, unsigned int k, T alpha, Matrix<Complex<T>, Par, Order> &A, T beta,
+          HermitianMatrix<Complex<T>, Par, Order, UpLo> &C,
+          HermitianMatrix<Complex<T>, Par, Order, UpLo> &result);
 // TODO: Specific implementations for the standard: cherk, zherk
 
 /**
@@ -758,13 +743,12 @@ void herk(T alpha, Matrix<Complex<T>, Par, Rows, Cols, Order> &A, T beta,
  * type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows in the matrices, A, B, C, and the output
- * matrix result.
- * @tparam Cols The number of columns in the matrices A and B.
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
  * @tparam UpLo Whether the matrix C is upper or lower triangular.
  *
+ * @param[in]  n The number of rows in the matrices A, B, C, and the output matrix result.
+ * @param[in]  k The number of columns in the matrices A and B.
  * @param[in]  alpha The scalar to multiply the outer product of A*B^T and B*A^T
  * by.
  * @param[in]  A The input matrix to multiply.
@@ -773,11 +757,11 @@ void herk(T alpha, Matrix<Complex<T>, Par, Rows, Cols, Order> &A, T beta,
  * @param[in]  C The input matrix to add to. Is square and symmetric.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Cols, Order = RowMajor,
+template <typename T, unsigned int Par, Order = RowMajor,
           UpperLower UpLo = Upper>
-void syr2k(T alpha, Matrix<T, Par, Rows, Cols, Order> &A, Matrix<T, Par, Rows, Cols, Order> &B,
-           T beta, SymmetricMatrix<T, Par, Rows, Order, UpLo> &C,
-           SymmetricMatrix<T, Par, Rows, Order, UpLo> &result);
+void syr2k(unsigned int n, unsigned int k, T alpha, Matrix<T, Par, Order> &A, Matrix<T, Par, Order> &B,
+           T beta, SymmetricMatrix<T, Par, Order, UpLo> &C,
+           SymmetricMatrix<T, Par, Order, UpLo> &result);
 // TODO: Specific implementations for the standard: csyr2k, dsyr2k, ssyr2k,
 // zsyr2k
 
@@ -790,13 +774,12 @@ void syr2k(T alpha, Matrix<T, Par, Rows, Cols, Order> &A, Matrix<T, Par, Rows, C
  * type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows in the matrices, A, B, C, and the output
- * matrix result.
- * @tparam Cols The number of columns in the matrices A and B.
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
  * @tparam UpLo Whether the matrix C is upper or lower triangular.
  *
+ * @param[in]  n The number of rows in the matrices A, B, C, and the output matrix result.
+ * @param[in]  k The number of columns in the matrices A and B.
  * @param[in]  alpha The scalar to multiply the outer product of A*conj(B)^T and
  * B*conj(A)^T by.
  * @param[in]  A The input matrix to multiply.
@@ -805,31 +788,31 @@ void syr2k(T alpha, Matrix<T, Par, Rows, Cols, Order> &A, Matrix<T, Par, Rows, C
  * @param[in]  C The input matrix to add to. Is square and Hermitian.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Cols, Order = RowMajor,
+template <typename T, unsigned int Par, Order = RowMajor,
           UpperLower UpLo = Upper>
-void her2k(T alpha, Matrix<Complex<T>, Par, Rows, Cols, Order> &A,
-           Matrix<Complex<T>, Par, Rows, Cols, Order> &B, T beta,
-           HermitianMatrix<Complex<T>, Par, Rows, Order, UpLo> &C,
-           HermitianMatrix<Complex<T>, Par, Rows, Order, UpLo> &result);
+void her2k(unsigned int n, unsigned int k, T alpha, Matrix<Complex<T>, Par, Order> &A,
+           Matrix<Complex<T>, Par, Order> &B, T beta,
+           HermitianMatrix<Complex<T>, Par, Order, UpLo> &C,
+           HermitianMatrix<Complex<T>, Par, Order, UpLo> &result);
 // TODO: Specific implementations for the standard: cher2k, zher2k
 
 /**
  * Transposes a column-major matrix into a row-major matrix, or vice versa.
  * Doesn't move any values, just changes the type.
  */
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Cols>
-Matrix<T, Par, Rows, Cols, RowMajor> transpose(Matrix<T, Par, Rows, Cols, ColMajor> &A);
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Cols>
-Matrix<T, Par, Rows, Cols, ColMajor> transpose(Matrix<T, Par, Rows, Cols, RowMajor> &A);
+template <typename T, unsigned int Par>
+Matrix<T, Par, RowMajor> transpose(Matrix<T, Par, ColMajor> &A);
+template <typename T, unsigned int Par>
+Matrix<T, Par, ColMajor> transpose(Matrix<T, Par, RowMajor> &A);
 
 /**
  * Transposes a column-major matrix into a row-major matrix, or vice versa. This
  * requires rearranging the data in memory, so it's a more expensive operation.
  */
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Cols>
-Matrix<T, Par, Rows, Cols, ColMajor> transpose(Matrix<T, Par, Rows, Cols, ColMajor> &A);
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Cols>
-Matrix<T, Par, Rows, Cols, RowMajor> transpose(Matrix<T, Par, Rows, Cols, RowMajor> &A);
+template <typename T, unsigned int Par>
+Matrix<T, Par, ColMajor> transpose(Matrix<T, Par, ColMajor> &A);
+template <typename T, unsigned int Par>
+Matrix<T, Par, RowMajor> transpose(Matrix<T, Par, RowMajor> &A);
 
 }  // namespace blas
 }  // namespace dyfc

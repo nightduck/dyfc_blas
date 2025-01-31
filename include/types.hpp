@@ -30,44 +30,72 @@ enum UpperLower { Upper, Lower };
 template <typename T, unsigned int Par>
 using WideType<T, Par> = hls::vector<T, Par>;
 
+// NOTE: A design decision was made to include the vector and matrix dimensions as class members
+//    instead of template parameters. This is because the functions that will accept vectors and
+//    matrices as arguments would also need to specify the dimensions as template arguments, which
+//    creates multiple compiled implementations of the same function. While different
+//    implementations may be needed for different levels of parallelism, a block capable of
+//    processing a 128x128 matrix should also be able to process a 1024x1024 matrix. for the same
+//    operation. Removing the template parameters from said function allows for a single
+//    implementation to be used for all argument sizes.
+
 constexpr size_t log2(size_t n) { return ((n < 2) ? 0 : 1 + log2(n / 2)); }
 
 /**
  * A wrapper for a stream of data representing a vector.
  *
- * @tparam T The type of the elements in the vector. Supports any type with
- * defined arithmetic ops.
- * @tparam Par Number of elements retrieved in one read operation. Must be a
- * power of 2.
- * @tparam Length The length of the vector.
+ * @tparam T The type of the elements in the vector. Supports any type with defined arithmetic ops.
+ * @tparam Par Number of elements retrieved in one read operation. Must be a power of 2.
  */
-template <typename T, unsigned int Par, unsigned int Length>
+template <typename T, unsigned int Par>
 class Vector {
   hls::stream<WideType<T, Par>> data;
+  const int length_;
 
  public:
   // Constructors
-  Vector() {
+  /**
+   * Creates a vector with a given length. Performs checks to validate the length of parallelism
+   *
+   * @param Length The length of the vector
+   */
+  Vector(unsigned int Length) : length_(Length) {
 #pragma HLS INLINE
-    static_assert(Length > 0, "Cols must be greater than 0");
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
-    static_assert(Length % Par == 0, "Cols must be a multiple of Par");
-  }
-
-  Vector(hls::stream<WideType<T, Par>> &data) : data(data) {
-#pragma HLS INLINE
-    static_assert(Length > 0, "Cols must be greater than 0");
-    static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
-    static_assert(Length % Par == 0, "Cols must be a multiple of Par");
+#ifndef __SYNTHESIS__
+    assert(Length > 0, "Cols must be greater than 0");
+    assert(Length % Par == 0, "Length must be a multiple of Par");
+#endif
   }
 
   /**
-   * Fills the vector with a single value
+   * Creates a vector with a given stream. Performs checks to validate the length of parallelism
+   *
+   * @param data The stream to use as the underlying data structure
+   * @param Length The length of the vector
+   */
+  Vector(hls::stream<WideType<T, Par>> &data, unsigned int Length) : data(data), length_(Length) {
+#pragma HLS INLINE
+    static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
+#ifndef __SYNTHESIS__
+    assert(Length > 0, "Cols must be greater than 0");
+    assert(Length % Par == 0, "Length must be a multiple of Par");
+#endif
+  }
+
+  /**
+   * Creates a vector and fills it with a single value
    *
    * @param p_Val The value to fill the vector with.
+   * @param Length The length of the vector
    */
-  Vector(T p_Val) {
+  Vector(T p_Val, unsigned int Length) : length_(Length) {
 #pragma HLS INLINE
+    static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
+#ifndef __SYNTHESIS__
+    assert(Length > 0, "Cols must be greater than 0");
+    assert(Length % Par == 0, "Length must be a multiple of Par");
+#endif
     for (size_t i = 0; i < Length; i += Par) {
 #pragma HLS PIPELINE
       WideType<T, Par> value;
@@ -120,6 +148,56 @@ class Vector {
     return data.size();
   }
 
+  /**
+   * Splits the vector into N vectors. Consumes the contents of the vector.
+   *
+   * @param v The array of vectors to split the data into
+   */
+  template<unsigned int N>
+  void split(Vector<T, Par> &v[N]) {
+#pragma HLS INLINE
+    for(int i = 0; i < length_; i++) {
+#pragma HLS PIPELINE
+      WideType<T, Par> value = read();
+      for(int j = 0; j < N; j++) {
+#pragma HLS UNROLL
+        v[j].write(value);
+      }
+    }
+  }
+
+  /**
+   * Duplicates the vector N times. Consumes the contents of the vector.
+   * 
+   * @param v The vector to duplicate the data into
+   * @param n The number of times to duplicate the vector
+   */
+  void duplicate(Vector<T, Par> &v, unsigned int n) {
+#pragma HLS INLINE
+    hls::stream<WideType<T, Par>> ring_buffer;
+    for (unsigned int i = 0; i < n; i++) {
+      for (unsigned int j = 0; j < length_; j++) {
+#pragma HLS PIPELINE
+        if (i == 0) {
+          WideType<T, Par> value = read();
+        } else {
+          WideType<T, Par> value = ring_buffer.read();
+        }
+        if (i < n - 1) {
+          ring_buffer.write(value);
+        }
+        v.write(value);
+      }
+    }
+  }
+
+  /**
+   * Returns the size of the vector, used for dimension checks during behavioral C synthesis
+   *
+   * @return The size of the vector
+   */
+  unsigned int shape() { return length_; }
+
   // TODO: Add support for reshaping and slicing. With the former returning a
   // matrix potentially
 }
@@ -136,41 +214,46 @@ class Vector {
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
  */
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Cols,
-          MajorOrder Order = RowMajor>
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor>
 class Matrix {
   hls::stream<WideType<T, Par>> data;
+  const unsigned int rows_;
+  const unsigned int cols_;
 
  public:
   // Constructors
-  Matrix() {
+  Matrix(unsigned int Rows, unsigned int Cols) : rows_(Rows), cols_(Cols) {
 #pragma HLS INLINE
-    static_assert(Rows > 0, "Rows must be greater than 0");
-    static_assert(Cols > 0, "Cols must be greater than 0");
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
+#ifndef __SYNTHESIS__
+    assert(Rows > 0, "Rows must be greater than 0");
+    assert(Cols > 0, "Cols must be greater than 0");
 
     // TODO: Maybe permit non multiples of Par? And just pad it with zeros
     // internally.
     if (Order == RowMajor) {
-      static_assert(Cols % Par == 0, "Cols must be a multiple of Par");
+      assert(Cols % Par == 0, "Cols must be a multiple of Par");
     } else {
-      static_assert(Rows % Par == 0, "Rows must be a multiple of Par");
+      assert(Rows % Par == 0, "Rows must be a multiple of Par");
     }
+#endif
   }
 
-  Matrix(hls::stream<WideType<T, Par>> &data) : data(data) {
+  Matrix(hls::stream<WideType<T, Par>> &data, unsigned int Rows, unsigned int Cols) : data(data), rows_(Rows), cols_(Cols) {
 #pragma HLS INLINE
-    static_assert(Rows > 0, "Rows must be greater than 0");
-    static_assert(Cols > 0, "Cols must be greater than 0");
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
+#ifndef __SYNTHESIS__
+    assert(Rows > 0, "Rows must be greater than 0");
+    assert(Cols > 0, "Cols must be greater than 0");
 
     // TODO: Maybe permit non multiples of Par? And just pad it with zeros
     // internally.
     if (Order == RowMajor) {
-      static_assert(Cols % Par == 0, "Cols must be a multiple of Par");
+      assert(Cols % Par == 0, "Cols must be a multiple of Par");
     } else {
-      static_assert(Rows % Par == 0, "Rows must be a multiple of Par");
+      assert(Rows % Par == 0, "Rows must be a multiple of Par");
     }
+#endif
   }
 
   /**
@@ -214,6 +297,36 @@ class Matrix {
     return data.size();
   }
 
+  /**
+   * Returns the shape of the matrix, used for dimension checks during behavioral C synthesis
+   *
+   * @return The shape of the matrix
+   */
+  std::pair<unsigned int, unsigned int> shape() {
+#pragma HLS INLINE
+    return {rows_, cols_};
+  }
+
+  /**
+   * Returns the number of rows in the matrix, used for dimension checks during behavioral C
+   *
+   * @return The number of rows in the matrix
+   */
+  unsigned int rows() {
+#pragma HLS INLINE
+    return rows_;
+  }
+
+  /**
+   * Returns the number of columns in the matrix, used for dimension checks during behavioral C
+   *
+   * @return The number of columns in the matrix
+   */
+  unsigned int cols() {
+#pragma HLS INLINE
+    return cols_;
+  }
+
   // TODO: Add support for reshaping and slicing. With the former returning a
   // vector potentially
 }
@@ -225,14 +338,12 @@ class Matrix {
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows in the matrix.
- * @tparam Cols The number of columns in the matrix.
  * @tparam SubDiagonals The number of subdiagonals in the matrix.
  * @tparam SupDiagonals The number of superdiagonals in the matrix.
  */
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Cols,
+template <typename T, unsigned int Par,
           unsigned int SubDiagonals, unsigned int SupDiagonals>
-class BandedMatrix : public Matrix<T, Par, Rows, Cols>;
+class BandedMatrix : public Matrix<T, Par>;
 
 /**
  * A wrapper for a stream of data representing a diagonal matrix. This is
@@ -243,11 +354,9 @@ class BandedMatrix : public Matrix<T, Par, Rows, Cols>;
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows in the matrix.
- * @tparam Cols The number of columns in the matrix.
  */
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Cols>
-using DiagonalMatrix = BandedMatrix<T, Par, Rows, Cols, 0, 0>;
+template <typename T, unsigned int Par>
+using DiagonalMatrix = BandedMatrix<T, Par, 0, 0>;
 
 /**
  * A wrapper for a stream of data representing a triangular matrix.
@@ -257,14 +366,13 @@ using DiagonalMatrix = BandedMatrix<T, Par, Rows, Cols, 0, 0>;
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows (and cols) in the matrix, which is square
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
  * @tparam UpLo Whether the matrix is upper or lower triangular.
  */
-template <typename T, unsigned int Par, unsigned int Rows, MajorOrder Order = RowMajor,
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor,
           UpperLower UpLo = Upper>
-class TriangularMatrix : public Matrix<T, Par, Rows, Cols>;
+class TriangularMatrix : public Matrix<T, Par, Order>;
 
 /**
  * A wrapper for a stream of data representing a triangular banded matrix.
@@ -274,14 +382,13 @@ class TriangularMatrix : public Matrix<T, Par, Rows, Cols>;
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows (and cols) in the matrix, which is square
  * @tparam Diagonals The number of subdiagonals in the matrix.
  * @tparam UpLo Whether the matrix is upper or lower triangular.
  */
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Diagonals,
+template <typename T, unsigned int Par, unsigned int Diagonals,
           UpperLower UpLo = Upper>
 class TriangularBandedMatrix
-    : public BandedMatrix<T, Par, Rows, Rows, constexpr(UpLo == Upper) ? 0 : Diagonals,
+    : public BandedMatrix<T, Par, constexpr(UpLo == Upper) ? 0 : Diagonals,
                           constexpr(UpLo == Lower) ? 0 : Diagonals>;
 
 // TODO: Add support for unit triangular matrices and their banded equivalents
@@ -294,13 +401,13 @@ class TriangularBandedMatrix
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows (and cols) in the matrix, which is square
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
+ * @tparam UpLo Whether the matrix is upper or lower triangular.
  */
-template <typename T, unsigned int Par, unsigned int Rows, MajorOrder Order = RowMajor,
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor,
           UpperLower UpLo = Upper>
-class SymmetricMatrix : public Matrix<T, Par, Rows, Cols>;
+class SymmetricMatrix : public Matrix<T, Par, Order>;
 
 /**
  * A wrapper for a stream of data representing a symmetric banded matrix.
@@ -309,14 +416,13 @@ class SymmetricMatrix : public Matrix<T, Par, Rows, Cols>;
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows (and cols) in the matrix, which is square
  * @tparam Diagonals The number of superdiagonals/subdiagonals in the matrix
  * (they are equal).
  * @tparam UpLo Whether the matrix is upper or lower triangular.
  */
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Diagonals,
+template <typename T, unsigned int Par, unsigned int Diagonals,
           UpperLower UpLo = Upper>
-class SymmetricBandedMatrix : public BandedMatrix<T, Par, Rows, Rows, cDiagonals, Diagonals>;
+class SymmetricBandedMatrix : public BandedMatrix<T, Par, Diagonals, Diagonals>;
 
 /**
  * A wrapper for a stream of data representing a Hermitian matrix.
@@ -328,13 +434,12 @@ class SymmetricBandedMatrix : public BandedMatrix<T, Par, Rows, Rows, cDiagonals
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows (and cols) in the matrix, which is square
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
  */
-template <typename T, unsigned int Par, unsigned int Rows, MajorOrder Order = RowMajor,
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor,
           UpperLower UpLo = Upper>
-class HermitianMatrix : public Matrix<T, Par, Rows, Cols>;
+class HermitianMatrix : public Matrix<T, Par, Order>;
 
 /**
  * A wrapper for a stream of data representing a Hermitian banded matrix.
@@ -345,14 +450,13 @@ class HermitianMatrix : public Matrix<T, Par, Rows, Cols>;
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows (and cols) in the matrix, which is square
  * @tparam Diagonals The number of superdiagonals/subdiagonals in the matrix
  * (they are equal).
  * @tparam UpLo Whether the matrix is upper or lower triangular.
  */
-template <typename T, unsigned int Par, unsigned int Rows, unsigned int Diagonals,
+template <typename T, unsigned int Par, unsigned int Diagonals,
           UpperLower UpLo = Upper>
-class HermitianBandedMatrix : public BandedMatrix<T, Par, Rows, Rows, Diagonals, Diagonals>;
+class HermitianBandedMatrix : public BandedMatrix<T, Par, Diagonals, Diagonals>;
 
 }  // namespace blas
 }  // namespace dyfc
