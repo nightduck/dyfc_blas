@@ -49,7 +49,7 @@ constexpr size_t log2(size_t n) { return ((n < 2) ? 0 : 1 + log2(n / 2)); }
  */
 template <typename T, unsigned int Par>
 class Vector {
-  hls::stream<WideType<T, Par>> data();
+  hls::stream<WideType<T, Par>> stream_;
   const int length_;
 
  public:
@@ -71,10 +71,10 @@ class Vector {
   /**
    * Creates a vector with a given stream. Performs checks to validate the length of parallelism
    *
-   * @param data The stream to use as the underlying data structure
+   * @param stream The stream to use as the underlying data structure
    * @param Length The length of the vector
    */
-  Vector(hls::stream<WideType<T, Par>> &data, unsigned int Length) : data(data), length_(Length) {
+  Vector(hls::stream<WideType<T, Par>> &stream, unsigned int Length) : stream_(stream), length_(Length) {
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
@@ -89,7 +89,7 @@ class Vector {
    * @param p_Val The value to fill the vector with.
    * @param Length The length of the vector
    */
-  Vector(T p_Val, unsigned int Length) : length_(Length) {
+  Vector(T p_Val, unsigned int Length) : stream_(), length_(Length) {
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
@@ -103,7 +103,7 @@ class Vector {
 #pragma HLS UNROLL
         value[j] = p_Val;
       }
-      data.write(value);
+      stream_.write(value);
     }
   }
 
@@ -111,23 +111,23 @@ class Vector {
    * Creates a vector and fills it with an array
    *
    * @param in_array The array to fill the vector with.
-   * @param Length The length of the vector
+   * @param length The length of the vector
    */
-  Vector(T *in_array, unsigned int Length) : length_(Length) {
+  Vector(T *in_array, unsigned int length) : stream_(), length_(length) {
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
-    assert(("Cols must be greater than 0", Length > 0));
-    assert(("Length must be a multiple of Par", Length % Par == 0));
+    assert(("length must be greater than 0", length > 0));
+    assert(("length must be a multiple of Par", length % Par == 0));
 #endif
-    for (size_t i = 0; i < Length; i += Par) {
+    for (size_t i = 0; i < length; i += Par) {
 #pragma HLS PIPELINE
       WideType<T, Par> value;
       for (size_t j = 0; j < Par; j++) {
 #pragma HLS UNROLL
         value[j] = in_array[i + j];
       }
-      data.write(value);
+      stream_.write(value);
     }
   }
 
@@ -138,7 +138,7 @@ class Vector {
    */
   WideType<T, Par> read() {
 #pragma HLS INLINE
-    return data.read();
+    return stream_.read();
   }
 
   /**
@@ -148,7 +148,7 @@ class Vector {
    */
   void write(WideType<T, Par> value) {
 #pragma HLS INLINE
-    data.write(value);
+    stream_.write(value);
   }
 
   /**
@@ -160,7 +160,7 @@ class Vector {
 #pragma HLS INLINE
     for (size_t i = 0; i < length_; i += Par) {
 #pragma HLS PIPELINE
-      WideType<T, Par> value = data.read();
+      WideType<T, Par> value = stream_.read();
       for (size_t j = 0; j < Par; j++) {
 #pragma HLS UNROLL
         out_array[i + j] = value[j];
@@ -175,7 +175,7 @@ class Vector {
    */
   bool empty() {
 #pragma HLS INLINE
-    return data.empty();
+    return stream_.empty();
   }
 
   /**
@@ -186,7 +186,7 @@ class Vector {
    */
   unsigned int size() {
 #pragma HLS INLINE
-    return data.size();
+    return stream_.size();
   }
 
   //   /**
@@ -221,7 +221,7 @@ class Vector {
 #pragma HLS PIPELINE
         WideType<T, Par> value;
         if (i == 0) {
-          value = read();
+          value = stream_.read();
         } else {
           value = ring_buffer.read();
         }
@@ -251,14 +251,12 @@ class Vector {
  * defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
- * @tparam Rows The number of rows in the matrix.
- * @tparam Cols The number of columns in the matrix.
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
  */
 template <typename T, unsigned int Par, MajorOrder Order = RowMajor>
 class Matrix {
-  hls::stream<WideType<T, Par>> data();
+  hls::stream<WideType<T, Par>> stream_;
   const unsigned int rows_;
   const unsigned int cols_;
 
@@ -281,8 +279,8 @@ class Matrix {
 #endif
   }
 
-  Matrix(hls::stream<WideType<T, Par>> &data, unsigned int Rows, unsigned int Cols)
-      : data(data), rows_(Rows), cols_(Cols) {
+  Matrix(hls::stream<WideType<T, Par>> &stream, unsigned int Rows, unsigned int Cols)
+      : stream_(stream), rows_(Rows), cols_(Cols) {
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
@@ -328,9 +326,10 @@ class Matrix {
 #pragma HLS LOOP_FLATTEN
           WideType<T, Par> value;
           for (size_t k = 0; k < Par; k++) {
+#pragma HLS UNROLL
             value[k] = in_array[i * Cols + j + k];
           }
-          data.write(value);
+          stream_.write(value);
         }
       }
     } else {
@@ -340,9 +339,10 @@ class Matrix {
 #pragma HLS LOOP_FLATTEN
           WideType<T, Par> value;
           for (size_t k = 0; k < Par; k++) {
+#pragma HLS UNROLL
             value[k] = in_array[i * Rows + j + k];
           }
-          data.write(value);
+          stream_.write(value);
         }
       }
     }
@@ -355,7 +355,7 @@ class Matrix {
    */
   WideType<T, Par> read() {
 #pragma HLS INLINE
-    return data.read();
+    return stream_.read();
   }
 
   /**
@@ -365,7 +365,7 @@ class Matrix {
    */
   void write(WideType<T, Par> value) {
 #pragma HLS INLINE
-    data.write(value);
+    stream_.write(value);
   }
 
   /**
@@ -375,7 +375,7 @@ class Matrix {
    */
   bool empty() {
 #pragma HLS INLINE
-    return data.empty();
+    return stream_.empty();
   }
 
   /**
@@ -386,7 +386,7 @@ class Matrix {
    */
   unsigned int size() {
 #pragma HLS INLINE
-    return data.size();
+    return stream_.size();
   }
 
   /**

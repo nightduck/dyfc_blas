@@ -20,53 +20,57 @@
 #include "blas.hpp"
 #include "EXAMPLE.hpp"
 
-#define RANDOM (rand() % 100) / (rand() % 100)
+#define RANDOM (rand() % 100) / (rand() % 100 + 1)
 
 bool approximatelyEqual(double a, double b, double epsilon) {
   if (a > b) {
     return (a / b) - 1 <= epsilon;
-  } else {
+  } else if (a < b) {
     return (b / a) - 1 <= epsilon;
+  } else {
+    return true;
   }
 }
 
 int main(int argc, char** argv) {
   double alpha;
-  double x[N];
-  double A[N][N];
-  double r[N];
-  double r_gold[N];
+  double x[dimN];
+  double A[dimN][dimN];
+  double r[dimN];
+  double r_gold[dimN];
 
   // Initialize variables with random floats
   srand(0xDEADBEEF);
   alpha = RANDOM;
-  for (int i = 0; i < N; i++) {
+  for (int i = 0; i < dimN; i++) {
     x[i] = RANDOM;
-    for (int j = 0; j < N; j++) {
+    for (int j = 0; j < dimN; j++) {
       A[i][j] = RANDOM;
     }
   }
 
   // Compute the correct result to compare against (this fictitious function is an element-wise
   // add along the diagonal)
-  for (int i = 0; i < N; i++) {
-    r_gold[i] = x[j] + A[i][i];
+  for (int i = 0; i < dimN; i++) {
+    r_gold[i] = alpha * (x[i] + A[i][i]);
   }
 
   // Make call to kernel
-  dexample_cm(alpha, x, A, r);
+  dexample_cm(dimN, alpha, x, A, r);
 
   // Verify results. Due to potential floating point error, we need to use an approximate comparison
-  bool fail = false;
-  for (int i = 0; i < 128; i++) {
+  int failed_index = -1;
+  for (int i = 0; i < dimN; i++) {
     if (!approximatelyEqual(r[i], r_gold[i], 1e-9)) {
-      fail = true;
+      failed_index = i;
       break;
     }
   }
 
-  if (fail) {
+  if (failed_index > 0) {
     std::cout << "FAILED TEST" << std::endl;
+    std::cout << "r[" << failed_index << "] (" << r[failed_index] << ") != "
+      << "r_gold[" << failed_index << "] (" << r_gold[failed_index] << ")" << std::endl;
     return -1;
   } else {
     std::cout << "PASSED TEST" << std::endl;

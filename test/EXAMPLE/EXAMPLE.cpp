@@ -15,18 +15,18 @@
 #include "EXAMPLE.hpp"
 #include "blas.hpp"
 
-void dexample_cm(unsigned int n, double x[N], double A[N][N], double r[N]) {
+void dexample_cm(unsigned int n, double alpha, double x[dimN], double A[dimN][dimN], double r[dimN]) {
     // Suggested parallelism level: 4096 / 8 / sizeof(type)
     // EG: 64 for doubles, 128 for floats, 32 for double precision complex
     const int Par = 4096 / 8 / sizeof(double);
 
     // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to constructor
-    dyfc::blas::Vector<double, Par> x_v(x, N);
-    dyfc::blas::Matrix<double, Par> A_m(FLATTEN_MATRIX(A), N, N);
-    dyfc::blas::Vector<double, Par> r_v(N);
+    dyfc::blas::Vector<double, Par> x_v(x, dimN);
+    dyfc::blas::Matrix<double, Par, dyfc::blas::ColMajor> A_m(FLATTEN_MATRIX(A), dimN, dimN);
+    dyfc::blas::Vector<double, Par> r_v(dimN);
 
     // Call a templated version of the blas function being tested
-    dyfc::blas::example<double, Par, dyfc::blas::ColMajor>(n, x_v, A_m, r_v);
+    dyfc::blas::example<double, Par, dyfc::blas::ColMajor>(n, alpha, x_v, A_m, r_v);
 
     // Write the result back to the output array
     r_v.write(r);

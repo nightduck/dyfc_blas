@@ -16,14 +16,16 @@
 #define DYFC_BLAS_TEST_EXAMPLE_HPP
 
 // The size of the problem should be specified in preprocessor directives that can be overriden by
-// the compile command.
-#define N 128
+// the compile command. Follow the convention
+#define dimN 128
+#define dimM 128
+#define dimK 128
 
 // Each test should target a particular example instantiation of a blas function, and the name
 // should be annotated according to BLAS convention to reflect that.
 // EG zaxpy is the axpy operation that takes double precision complex numbers.
 // Illustrated here is the fictitious example function implemented with double precision real
 // numbers and a column-major matrix.
-void dexample_cm(unsigned int n, double x[N], double A[N][N], double r[N]);
+void dexample_cm(unsigned int n, double alpha, double x[dimN], double A[dimN][dimN], double r[dimN]);
 
 #endif  // DYFC_BLAS_TEST_EXAMPLE_HPP
