@@ -15,7 +15,7 @@
 #include "EXAMPLE.hpp"
 #include "blas.hpp"
 
-void dexample_cm(unsigned int n, double alpha, double x[dimN], double A[dimN][dimN], double r[dimN]) {
+void dexample_cm(const unsigned int n, double alpha, double x[dimN], double A[dimN][dimN], double r[dimN]) {
     // Suggested parallelism level: 4096 / 8 / sizeof(type)
     // EG: 64 for doubles, 128 for floats, 32 for double precision complex
     const int Par = 4096 / 8 / sizeof(double);

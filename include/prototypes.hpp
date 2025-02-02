@@ -76,6 +76,9 @@ void scal(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &result);
  */
 template <typename T, unsigned int Par>
 void copy(Vector<T, Par> x, unsigned int incX, Vector<T, Par> result) {
+  (void)x;
+  (void)incX;
+  (void)result;
   assert(("Copy operation not possible on streams", false));
 }
 
@@ -85,6 +88,8 @@ void copy(Vector<T, Par> x, unsigned int incX, Vector<T, Par> result) {
  */
 template <typename T, unsigned int Par>
 void swap(Vector<T, Par> &x, Vector<T, Par> &y) {
+  (void)x;
+  (void)y;
   assert(("Swap operation not possible on streams", false));
 }
 

@@ -50,7 +50,7 @@ constexpr size_t log2(size_t n) { return ((n < 2) ? 0 : 1 + log2(n / 2)); }
 template <typename T, unsigned int Par>
 class Vector {
   hls::stream<WideType<T, Par>> stream_;
-  const int length_;
+  const size_t length_;
 
  public:
   // Constructors
@@ -59,7 +59,7 @@ class Vector {
    *
    * @param Length The length of the vector
    */
-  Vector(unsigned int Length) : length_(Length) {
+  Vector(const unsigned int Length) : length_(Length) {
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
@@ -74,7 +74,7 @@ class Vector {
    * @param stream The stream to use as the underlying data structure
    * @param Length The length of the vector
    */
-  Vector(hls::stream<WideType<T, Par>> &stream, unsigned int Length) : stream_(stream), length_(Length) {
+  Vector(hls::stream<WideType<T, Par>> &stream, const unsigned int Length) : stream_(stream), length_(Length) {
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
@@ -89,7 +89,7 @@ class Vector {
    * @param p_Val The value to fill the vector with.
    * @param Length The length of the vector
    */
-  Vector(T p_Val, unsigned int Length) : stream_(), length_(Length) {
+  Vector(T p_Val, const unsigned int Length) : stream_(), length_(Length) {
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
@@ -113,8 +113,9 @@ class Vector {
    * @param in_array The array to fill the vector with.
    * @param length The length of the vector
    */
-  Vector(T *in_array, unsigned int length) : stream_(), length_(length) {
+  Vector(T *in_array, const unsigned int length) : stream_(), length_(length) {
 #pragma HLS INLINE
+#pragma HLS ARRAY_PARTITION variable=in_array type=cyclic factor=Par
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
     assert(("length must be greater than 0", length > 0));
@@ -158,6 +159,7 @@ class Vector {
    */
   void write(T *out_array) {
 #pragma HLS INLINE
+#pragma HLS ARRAY_PARTITION variable=out_array type=cyclic factor=Par
     for (size_t i = 0; i < length_; i += Par) {
 #pragma HLS PIPELINE
       WideType<T, Par> value = stream_.read();
@@ -262,7 +264,7 @@ class Matrix {
 
  public:
   // Constructors
-  Matrix(unsigned int Rows, unsigned int Cols) : rows_(Rows), cols_(Cols) {
+  Matrix(const unsigned int Rows, const unsigned int Cols) : rows_(Rows), cols_(Cols) {
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
@@ -279,7 +281,7 @@ class Matrix {
 #endif
   }
 
-  Matrix(hls::stream<WideType<T, Par>> &stream, unsigned int Rows, unsigned int Cols)
+  Matrix(hls::stream<WideType<T, Par>> &stream, const unsigned int Rows, const unsigned int Cols)
       : stream_(stream), rows_(Rows), cols_(Cols) {
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
@@ -301,10 +303,12 @@ class Matrix {
    * Creates a matrix and fills it with a 2D array
    *
    * @param in_array The array to fill the vector with.
-   * @param Length The length of the vector
+   * @param Rows The number of rows in the matrix
+   * @param Cols The number of columns in the matrix
    */
-  Matrix(T *in_array, unsigned int Rows, unsigned int Cols) : rows_(Rows), cols_(Cols) {
+  Matrix(T *in_array, const unsigned int Rows, const unsigned int Cols) : rows_(Rows), cols_(Cols) {
 #pragma HLS INLINE
+#pragma HLS ARRAY_PARTITION variable=in_array type=cyclic factor=Par
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
     assert(("Rows must be greater than 0", Rows > 0));

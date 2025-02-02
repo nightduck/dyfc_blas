@@ -15,3 +15,11 @@
 
 .bin
 .pdi
+
+#Ignore Vitis IDE artifacts
+.peers.ini
+.repo.yaml
+.cache
+
+#Ignore VSCode artifacts
+.vscode/*

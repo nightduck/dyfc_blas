@@ -26,6 +26,6 @@
 // EG zaxpy is the axpy operation that takes double precision complex numbers.
 // Illustrated here is the fictitious example function implemented with double precision real
 // numbers and a column-major matrix.
-void dexample_cm(unsigned int n, double alpha, double x[dimN], double A[dimN][dimN], double r[dimN]);
+void dexample_cm(const unsigned int n, double alpha, double x[dimN], double A[dimN][dimN], double r[dimN]);
 
 #endif  // DYFC_BLAS_TEST_EXAMPLE_HPP

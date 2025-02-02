@@ -31,28 +31,52 @@ namespace blas {
  * @tparam Order The major order of the matrix. Can be either RowMajor or ColMajor.
  * 
  * @param[in]  n The length of the vector x and the size of the square matrix A.
+ * @param[in]  alpha The scalar to multiply the result by.
  * @param[in]  x The input vector to multiply.
  * @param[in]  A The input matrix to add to.
  * @param[out] r The output vector to write to.
  */
-template <typename T, unsigned int Par, MajorOrder Order>
-void example(unsigned int n, T alpha, Vector<T, Par> &x, Matrix<T, Par, Order> &A, Vector<T, Par> &r) {
-#pragma HLS INLINE
-  WideType<T, Par> r_val;
-  for (unsigned int i = 0; i < n; i += Par) {
-    WideType<T, Par> x_val = x.read();
-    r_val = 0;
-    for (unsigned int j = 0; j < Par; j++) {
-      for (unsigned int k = 0; k < n; k += Par) {
+template <typename T, const unsigned int Par, MajorOrder Order>
+void example(const unsigned int n, T alpha, Vector<T, Par> &x, Matrix<T, Par, Order> &A, Vector<T, Par> &r) {
+#ifndef __SYNTHESIS__
+    assert(("Passed size n must be multiple of Par", n % Par == 0));
+#endif
+  WideType<T, Par> r_val = 0;
+  WideType<T, Par> x_val;
+LOOP_example_outer:for (unsigned int i = 0; i < n; i += Par) {
+LOOP_example_middle:for (unsigned int j = 0; j < Par; j++) {
+LOOP_example_inner:for (unsigned int k = 0; k < n; k += Par) {
+// #pragma HLS LOOP_FLATTEN
+// #pragma HLS PIPELINE
+#pragma HLS LOOP_TRIPCOUNT max = n*n/Par
+        // WideType<T, Par> A_val = A.read();
+        // if (j + k == 0) {
+        //   x_val = x.read();
+        //   r_val = 0;
+        // }
+        // int l = i + j - k;
+        // if (l >= 0 && l < Par) {
+        //   r_val[j] = alpha * (x_val[j] + A_val[l]);
+        // }
+        // if ((j == Par - 1) && (k == n - 1)) {
+        //   r.write(r_val);
+        // }
+
+        unsigned int l = i + j - k;
         WideType<T, Par> A_val = A.read();
-        for (unsigned int l = 0; l < Par; l++) {
-          if (i + j == k + l) {
-            r_val[j] = alpha * (x_val[j] + A_val[l]);
+        if (j + k == 0) {
+#pragma HLS OCCURENCE cycle=n
+          x_val = x.read();
+        }
+        if (l < Par) {
+          r_val[j] = alpha * (x_val[j] + A_val[l]);
+          if (j == Par - 1) {
+            r.write(r_val);
+            r_val = 0;
           }
         }
       }
     }
-    r.write(r_val);
   }
 }
 
