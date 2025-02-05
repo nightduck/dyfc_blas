@@ -12,26 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "EXAMPLE.hpp"
 #include "blas.hpp"
+#include "EXAMPLE.hpp"  // This is the header file in the test directory
 
 // The kernel function should take the same arguments as the function being tested, with the
 // exception of size information, which is statically defined as dimN, dimM, and dimK.
 void dexample_cm(double alpha, double x[dimN], double A[dimN][dimN], double r[dimN]) {
-    // Suggested parallelism level: 4096 / 8 / sizeof(type)
-    // EG: 64 for doubles, 128 for floats, 32 for double precision complex
-    const int Par = 4096 / 8 / sizeof(double);
+  // Suggested parallelism level: 4096 / 8 / sizeof(type)
+  // EG: 64 for doubles, 128 for floats, 32 for double precision complex
+  const int Par = 4096 / 8 / sizeof(double);
 
-    // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to constructor
-    dyfc::blas::Vector<double, Par> x_v(x, dimN);
-    dyfc::blas::Matrix<double, Par, dyfc::blas::ColMajor> A_m(FLATTEN_MATRIX(A), dimN, dimN);
-    dyfc::blas::Vector<double, Par> r_v(dimN);
+  // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to constructor
+  dyfc::blas::Vector<double, Par> x_v(x, dimN);
+  dyfc::blas::Matrix<double, Par, dyfc::blas::ColMajor> A_m(FLATTEN_MATRIX(A), dimN, dimN);
+  dyfc::blas::Vector<double, Par> r_v(dimN);
 
-    // Call a templated version of the blas function being tested
-    dyfc::blas::example<double, Par, dyfc::blas::ColMajor>(dimN, alpha, x_v, A_m, r_v);
+  // Call a templated version of the blas function being tested
+  dyfc::blas::example<double, Par, dyfc::blas::ColMajor>(dimN, alpha, x_v, A_m, r_v);
 
-    // Write the result back to the output array
-    r_v.write(r);
+  // Write the result back to the output array
+  r_v.write(r);
 
-    return;
+  return;
 }

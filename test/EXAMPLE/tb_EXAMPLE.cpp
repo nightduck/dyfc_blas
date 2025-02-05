@@ -18,7 +18,7 @@
 #include <cstdlib>
 
 #include "blas.hpp"
-#include "EXAMPLE.hpp"
+#include "EXAMPLE.hpp"  // This is the header file in the test directory
 
 #define RANDOM (rand() % 100) / (rand() % 100 + 1)
 
@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  if (failed_index > 0) {
+  if (failed_index > -1) {
     std::cout << "FAILED TEST" << std::endl;
     std::cout << "r[" << failed_index << "] (" << r[failed_index] << ") != "
       << "r_gold[" << failed_index << "] (" << r_gold[failed_index] << ")" << std::endl;

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DYFC_BLAS_TEST_EXAMPLE_HPP
-#define DYFC_BLAS_TEST_EXAMPLE_HPP
+#ifndef DYFC_BLAS_TEST_DEXAMPLE_CM_HPP
+#define DYFC_BLAS_TEST_DEXAMPLE_CM_HPP
 
 // The size of the problem should be specified in preprocessor directives that can be overriden by
 // the compile command. Follow the convention
@@ -34,4 +34,4 @@
 // numbers and a column-major matrix.
 void dexample_cm(double alpha, double x[dimN], double A[dimN][dimN], double r[dimN]);
 
-#endif  // DYFC_BLAS_TEST_EXAMPLE_HPP
+#endif  // DYFC_BLAS_TEST_DEXAMPLE_CM_HPP
