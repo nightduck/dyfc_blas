@@ -20,7 +20,7 @@
 #include "blas.hpp"
 #include "EXAMPLE.hpp"  // This is the header file in the test directory
 
-#define RANDOM (rand() % 100) / (rand() % 100 + 1)
+#define RANDOM (double)(rand() % 100) / (double)(rand() % 100 + 1)
 
 bool approximatelyEqual(double a, double b, double epsilon) {
   if (a > b) {
