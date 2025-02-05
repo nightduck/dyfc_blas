@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
   }
 
   // Make call to kernel
-  dexample_cm(dimN, alpha, x, A, r);
+  dexample_cm(alpha, x, A, r);
 
   // Verify results. Due to potential floating point error, we need to use an approximate comparison
   int failed_index = -1;
