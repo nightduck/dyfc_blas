@@ -15,6 +15,10 @@
 #ifndef DYFC_BLAS_TEST_DAXPY_HPP
 #define DYFC_BLAS_TEST_DAXPY_HPP
 
-void daxpy(unsigned int n, double alpha, double x[128], double y[128], double r[128]);
+#ifndef dimN
+#define dimN 8192
+#endif
+
+void daxpy(double alpha, double x[dimN], double y[dimN], double r[dimN]);
 
 #endif  // DYFC_BLAS_TEST_DAXPY_HPP

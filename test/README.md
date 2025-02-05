@@ -21,8 +21,8 @@ These tests also serve to benchmark the BLAS library functions by synthesizing t
 different input sizes
 
 IN PROGRESS: The input sizes can only be specified in the hls_config file. See the two lines
-passing the dimN, dimM, and dimK defines as cflags. We need some way to automatically modify the
-config file between successive tests. Each test also needs to extract the latency information from
+passing cflags. We need some way to automatically modify the config file between successive tests
+to define dimN, dimM, and dimK. Each test also needs to extract the latency information from
 csynth.rtpt file. Preferably both the unit as a whole, as well as just the call to the API, to give
 us a sense of memory overhead.
 

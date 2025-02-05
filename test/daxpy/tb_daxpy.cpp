@@ -12,55 +12,69 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cmath>
-#include "daxpy.hpp"
-#include "axpy.hpp"
-#include "blas.hpp"
-#include <cstdlib>
 #include <stdio.h>
 
+#include <cmath>
+#include <cstdlib>
+
+#include "blas.hpp"
+#include "daxpy.hpp"
+
+#define RANDOM (double)(rand() % 100) / (double)(rand() % 100 + 1)
 
 bool approximatelyEqual(double a, double b, double epsilon) {
-    if (a > b) {
-        return (a / b) - 1 <= epsilon;
-    } else {
-        return (b / a) - 1 <= epsilon;
-    }
+  if (a > b) {
+    return (a / b) - 1 <= epsilon;
+  } else if (a < b) {
+    return (b / a) - 1 <= epsilon;
+  } else {
+    return true;
+  }
 }
 
 int main(int argc, char** argv) {
-    double x[128];
-    double y[128];
-    double r[128];
-    double r_gold[128];
-    double alpha;
+  double alpha;
+  double x[dimN];
+  double y[dimN];
+  double r[dimN];
+  double r_gold[dimN];
 
-    // Initialize variables
-    srand(0xDEADBEEF);
-    alpha = (rand() % 100) / (rand() % 100);
-    for(int i = 0; i < 128; i++) {
-        x[i] = (rand() % 100) / (rand() % 100);
-        y[i] = (rand() % 100) / (rand() % 100);
-        r_gold[i] = alpha * x[i] + y[i];
+  // Initialize variables with random floats
+  srand(0xDEADBEEF);
+  alpha = RANDOM;
+  for (int i = 0; i < dimN; i++) {
+    x[i] = RANDOM;
+    y[i] = RANDOM;
+  }
+
+  // Compute the correct result to compare against (this fictitious function is an element-wise
+  // add along the diagonal)
+  for (int i = 0; i < dimN; i++) {
+    r_gold[i] = alpha * x[i] + y[i];
+  }
+
+  // Make call to kernel
+  daxpy(alpha, x, y, r);
+
+  // Verify results. Due to potential floating point error, we need to use an approximate comparison
+  int failed_index = -1;
+  for (int i = 0; i < dimN; i++) {
+    if (!approximatelyEqual(r[i], r_gold[i], 1e-9)) {
+      failed_index = i;
+      break;
     }
+  }
 
-    // Make call to kernel
-    daxpy(128, alpha, x, y, r);
-
-    // Verify results
-    bool fail = false;
-    for (int i = 0; i < 128; i++) {
-        if (!approximatelyEqual(r[i], r_gold[i], 1e-9)) {
-            fail = true;
-            break;
-        }
-    }
-
-    if (fail) {
-        std::cout << "FAILED TEST" << std::endl;
-        return -1;
-    } else {
-        std::cout << "PASSED TEST" << std::endl;
-        return 0;
-    }
+  if (failed_index > -1) {
+    std::cout << "FAILED TEST" << std::endl;
+    std::cout << "r[" << failed_index << "] (" << r[failed_index] << ") != "
+      << "r_gold[" << failed_index << "] (" << r_gold[failed_index] << ")" << std::endl;
+  for (int i = 0; i < dimN; i++) {
+    std::cout << "r[" << i << "] = " << r[i] << ", r_gold[" << i << "] = " << r_gold[i] << std::endl;
+  }
+    return -1;
+  } else {
+    std::cout << "PASSED TEST" << std::endl;
+    return 0;
+  }
 }

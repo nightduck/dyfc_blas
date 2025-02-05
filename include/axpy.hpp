@@ -46,10 +46,6 @@ void axpy(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y, Vector<
 #pragma HLS PIPELINE
     WideType<T, Par> r_val = 0;
     r_val = alpha * x.read() + y.read();
-    //         for(unsigned int j = 0; j < Par; j++) {
-    // #pragma HLS UNROLL
-    //             result[i+j] = alpha * x.read()
-    //         }
     result.write(r_val);
   }
 }
