@@ -21,12 +21,8 @@
 #include "EXAMPLE.hpp"  // This is the header file in the test directory
 
 #define RANDOM (double)(rand() % 100) / (double)(rand() % 100 + 1)
-#define COMPLEX_RANDOM                                               \
-  ComplexDouble((double)(rand() % 100) / (double)(rand() % 100 + 1), \
-                (double)(rand() % 100) / (double)(rand() % 100 + 1))
 
-template<typename T>
-bool approximatelyEqual(T a, T b, double epsilon) {
+bool approximatelyEqual(double a, double b, double epsilon) {
   if (a > b) {
     return (a / b) - 1 <= epsilon;
   } else if (a < b) {
@@ -36,37 +32,14 @@ bool approximatelyEqual(T a, T b, double epsilon) {
   }
 }
 
-template<typename T>
-bool approximatelyEqual(Complex<T> a, Complex<T> b, double epsilon) {
-  bool real_close;
-  bool imag_close;
-  if (a.real > b.real) {
-    real_close = (a.real / b.real) - 1 <= epsilon;
-  } else if (a.real < b.real) {
-    real_close = (b.real / a.real) - 1 <= epsilon;
-  } else {
-    real_close = true;
-  }
-
-  if (a.imag > b.imag) {
-    imag_close = (a.imag / b.imag) - 1 <= epsilon;
-  } else if (a.imag < b.imag) {
-    imag_close = (b.imag / a.imag) - 1 <= epsilon;
-  } else {
-    imag_close = true;
-  }
-
-  return real_close && imag_close;
-}
-
 int main(int argc, char** argv) {
-  OPERAND_TYPE alpha;
-  OPERAND_TYPE x[dimN];
-  OPERAND_TYPE A[dimN][dimN];
-  OPERAND_TYPE r[dimN];
-  OPERAND_TYPE r_gold[dimN];
+  double alpha;
+  double x[dimN];
+  double A[dimN][dimN];
+  double r[dimN];
+  double r_gold[dimN];
 
-  // Initialize variables with random floats. Replace these with COMPLEX_RANDOM for complex types
+  // Initialize variables with random floats
   srand(0xDEADBEEF);
   alpha = RANDOM;
   for (int i = 0; i < dimN; i++) {
