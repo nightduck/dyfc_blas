@@ -17,18 +17,18 @@
 
 // The kernel function should take the same arguments as the function being tested, with the
 // exception of size information, which is statically defined as dimN, dimM, and dimK.
-void dexample_cm(double alpha, double x[dimN], double A[dimN][dimN], double r[dimN]) {
+void dexample_cm(OPERAND_TYPE alpha, OPERAND_TYPE x[dimN], OPERAND_TYPE A[dimN][dimN], OPERAND_TYPE r[dimN]) {
   // Suggested parallelism level: 4096 / 8 / sizeof(type)
   // EG: 64 for doubles, 128 for floats, 32 for double precision complex
-  const int Par = 4096 / 8 / sizeof(double);
+  const int Par = 4096 / 8 / sizeof(OPERAND_TYPE);
 
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to constructor
-  dyfc::blas::Vector<double, Par> x_v(x, dimN);
-  dyfc::blas::Matrix<double, Par, dyfc::blas::ColMajor> A_m(FLATTEN_MATRIX(A), dimN, dimN);
-  dyfc::blas::Vector<double, Par> r_v(dimN);
+  dyfc::blas::Vector<OPERAND_TYPE, Par> x_v(x, dimN);
+  dyfc::blas::Matrix<OPERAND_TYPE, Par, dyfc::blas::ColMajor> A_m(FLATTEN_MATRIX(A), dimN, dimN);
+  dyfc::blas::Vector<OPERAND_TYPE, Par> r_v(dimN);
 
   // Call a templated version of the blas function being tested
-  dyfc::blas::example<double, Par, dyfc::blas::ColMajor>(dimN, alpha, x_v, A_m, r_v);
+  dyfc::blas::example<OPERAND_TYPE, Par, dyfc::blas::ColMajor>(dimN, alpha, x_v, A_m, r_v);
 
   // Write the result back to the output array
   r_v.write(r);

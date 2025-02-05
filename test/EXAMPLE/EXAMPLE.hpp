@@ -27,11 +27,13 @@
 #define dimK 128
 #endif
 
+#define OPERAND_TYPE double
+
 // Each test should target a particular example instantiation of a blas function, and the name
 // should be annotated according to BLAS convention to reflect that.
 // EG zaxpy is the axpy operation that takes double precision complex numbers.
 // Illustrated here is the fictitious example function implemented with double precision real
 // numbers and a column-major matrix.
-void dexample_cm(double alpha, double x[dimN], double A[dimN][dimN], double r[dimN]);
+void dexample_cm(OPERAND_TYPE alpha, OPERAND_TYPE x[dimN], OPERAND_TYPE A[dimN][dimN], OPERAND_TYPE r[dimN]);
 
 #endif  // DYFC_BLAS_TEST_DEXAMPLE_CM_HPP
