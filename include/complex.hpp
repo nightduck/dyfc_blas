@@ -15,15 +15,16 @@
 #ifndef DYFC_BLAS_COMPLEX_HPP
 #define DYFC_BLAS_COMPLEX_HPP
 
+#include <iostream>
 namespace dyfc {
 namespace blas {
 
 template <typename T>
 class Complex {
+public:
   T real;
   T imag;
 
- public:
   Complex(T real = 0, T imag = 0) : real(real), imag(imag) {}
 
   Complex operator+(const Complex& other) const {
@@ -47,10 +48,24 @@ class Complex {
     return Complex(newReal, newImag);
   }
 
+  bool operator==(const Complex& other) const {
+    return real == other.real && imag == other.imag;
+  }
+
+  bool operator!=(const Complex& other) const {
+    return real != other.real || imag != other.imag;
+  }
+
   // TODO: Implement assign equal operations
 
   Complex conj() const { return Complex(real, -imag); }
 };
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const Complex<T>& c) {
+  os << c.real << " + " << c.imag << "i";
+  return os;
+}
 
 }  // namespace blas
 }  // namespace dyfc
