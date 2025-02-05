@@ -25,6 +25,8 @@ public:
   T real;
   T imag;
 
+  using value_type = T;
+
   Complex(T real = 0, T imag = 0) : real(real), imag(imag) {}
 
   Complex operator+(const Complex& other) const {

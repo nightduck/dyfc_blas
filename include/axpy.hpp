@@ -25,6 +25,8 @@ namespace blas {
  * Computes a vector-scalar product and adds the result to a vector.
  *
  * r = alpha * x + y
+ * 
+ * This once templated implementation accomodates the caxpy, daxpy, saxpy, and zaxpy calls
  *
  * @tparam T The type of the elements in the vector. Supports any type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a power of 2.
@@ -54,7 +56,6 @@ void axpy(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y, Vector<
     result.write(r_val);
   }
 }
-// TODO: Specific implementations for the standard: caxpy, daxpy, saxpy, zaxpy
 
 }  // namespace blas
 }  // namespace dyfc
