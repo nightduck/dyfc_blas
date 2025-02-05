@@ -20,7 +20,9 @@
 #include "blas.hpp"
 #include "zaxpy.hpp"
 
-#define COMPLEX_RANDOM ComplexDouble((double)(rand() % 100) / (double)(rand() % 100 + 1), (double)(rand() % 100) / (double)(rand() % 100 + 1))
+#define COMPLEX_RANDOM                                               \
+  ComplexDouble((double)(rand() % 100) / (double)(rand() % 100 + 1), \
+                (double)(rand() % 100) / (double)(rand() % 100 + 1))
 
 bool approximatelyEqual(ComplexDouble a, ComplexDouble b, double epsilon) {
   bool real_close;
@@ -28,17 +30,17 @@ bool approximatelyEqual(ComplexDouble a, ComplexDouble b, double epsilon) {
   if (a.real > b.real) {
     real_close = (a.real / b.real) - 1 <= epsilon;
   } else if (a.real < b.real) {
-    real_close =  (b.real / a.real) - 1 <= epsilon;
+    real_close = (b.real / a.real) - 1 <= epsilon;
   } else {
-    real_close =  true;
+    real_close = true;
   }
 
   if (a.imag > b.imag) {
     imag_close = (a.imag / b.imag) - 1 <= epsilon;
   } else if (a.imag < b.imag) {
-    imag_close =  (b.imag / a.imag) - 1 <= epsilon;
+    imag_close = (b.imag / a.imag) - 1 <= epsilon;
   } else {
-    imag_close =  true;
+    imag_close = true;
   }
 
   return real_close && imag_close;
@@ -80,7 +82,7 @@ int main(int argc, char** argv) {
   if (failed_index > -1) {
     std::cout << "FAILED TEST" << std::endl;
     std::cout << "r[" << failed_index << "] (" << r[failed_index] << ") != "
-      << "r_gold[" << failed_index << "] (" << r_gold[failed_index] << ")" << std::endl;
+              << "r_gold[" << failed_index << "] (" << r_gold[failed_index] << ")" << std::endl;
     return -1;
   } else {
     std::cout << "PASSED TEST" << std::endl;

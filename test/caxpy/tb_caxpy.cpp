@@ -18,33 +18,47 @@
 #include <cstdlib>
 
 #include "blas.hpp"
-#include "daxpy.hpp"
+#include "caxpy.hpp"
 
-#define RANDOM (double)(rand() % 100) / (double)(rand() % 100 + 1)
+#define COMPLEX_RANDOM                                            \
+  ComplexFloat((float)(rand() % 100) / (float)(rand() % 100 + 1), \
+               (float)(rand() % 100) / (float)(rand() % 100 + 1))
 
-bool approximatelyEqual(double a, double b, double epsilon) {
-  if (a > b) {
-    return (a / b) - 1 <= epsilon;
-  } else if (a < b) {
-    return (b / a) - 1 <= epsilon;
+bool approximatelyEqual(ComplexFloat a, ComplexFloat b, double epsilon) {
+  bool real_close;
+  bool imag_close;
+  if (a.real > b.real) {
+    real_close = (a.real / b.real) - 1 <= epsilon;
+  } else if (a.real < b.real) {
+    real_close = (b.real / a.real) - 1 <= epsilon;
   } else {
-    return true;
+    real_close = true;
   }
+
+  if (a.imag > b.imag) {
+    imag_close = (a.imag / b.imag) - 1 <= epsilon;
+  } else if (a.imag < b.imag) {
+    imag_close = (b.imag / a.imag) - 1 <= epsilon;
+  } else {
+    imag_close = true;
+  }
+
+  return real_close && imag_close;
 }
 
 int main(int argc, char** argv) {
-  double alpha;
-  double x[dimN];
-  double y[dimN];
-  double r[dimN];
-  double r_gold[dimN];
+  ComplexFloat alpha;
+  ComplexFloat x[dimN];
+  ComplexFloat y[dimN];
+  ComplexFloat r[dimN];
+  ComplexFloat r_gold[dimN];
 
   // Initialize variables with random floats
   srand(0xDEADBEEF);
-  alpha = RANDOM;
+  alpha = COMPLEX_RANDOM;
   for (int i = 0; i < dimN; i++) {
-    x[i] = RANDOM;
-    y[i] = RANDOM;
+    x[i] = COMPLEX_RANDOM;
+    y[i] = COMPLEX_RANDOM;
   }
 
   // Compute the correct result to compare against (this fictitious function is an element-wise
@@ -54,7 +68,7 @@ int main(int argc, char** argv) {
   }
 
   // Make call to kernel
-  daxpy(alpha, x, y, r);
+  caxpy(alpha, x, y, r);
 
   // Verify results. Due to potential floating point error, we need to use an approximate comparison
   int failed_index = -1;
@@ -69,10 +83,6 @@ int main(int argc, char** argv) {
     std::cout << "FAILED TEST" << std::endl;
     std::cout << "r[" << failed_index << "] (" << r[failed_index] << ") != "
               << "r_gold[" << failed_index << "] (" << r_gold[failed_index] << ")" << std::endl;
-    for (int i = 0; i < dimN; i++) {
-      std::cout << "r[" << i << "] = " << r[i] << ", r_gold[" << i << "] = " << r_gold[i]
-                << std::endl;
-    }
     return -1;
   } else {
     std::cout << "PASSED TEST" << std::endl;

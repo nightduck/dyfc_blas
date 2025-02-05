@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "daxpy.hpp"
+#include "saxpy.hpp"
 
 #include "blas.hpp"
 
-void daxpy(double alpha, double x[dimN], double y[dimN], double r[dimN]) {
+void saxpy(float alpha, float x[dimN], float y[dimN], float r[dimN]) {
   // Suggested parallelism level: 4096 / 8 / sizeof(type)
   // EG: 64 for doubles, 128 for floats, 32 for double precision complex
-  const int Par = 4096 / 8 / sizeof(double);
+  const int Par = 4096 / 8 / sizeof(float);
 
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
   // constructor
-  dyfc::blas::Vector<double, Par> x_v(x, dimN);
-  dyfc::blas::Vector<double, Par> y_v(y, dimN);
-  dyfc::blas::Vector<double, Par> r_v(dimN);
+  dyfc::blas::Vector<float, Par> x_v(x, dimN);
+  dyfc::blas::Vector<float, Par> y_v(y, dimN);
+  dyfc::blas::Vector<float, Par> r_v(dimN);
 
   // Call a templated version of the blas function being tested
-  dyfc::blas::axpy<double, Par>(dimN, alpha, x_v, y_v, r_v);
+  dyfc::blas::axpy<float, Par>(dimN, alpha, x_v, y_v, r_v);
 
   // Write the result back to the output array
   r_v.write(r);

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "zaxpy.hpp"
+
 #include "blas.hpp"
 
 void zaxpy(ComplexDouble alpha, ComplexDouble x[dimN], ComplexDouble y[dimN],
@@ -21,7 +22,8 @@ void zaxpy(ComplexDouble alpha, ComplexDouble x[dimN], ComplexDouble y[dimN],
   // EG: 64 for doubles, 128 for floats, 32 for double precision complex
   const int Par = 4096 / 8 / sizeof(ComplexDouble);
 
-  // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to constructor
+  // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
+  // constructor
   dyfc::blas::Vector<ComplexDouble, Par> x_v(x, dimN);
   dyfc::blas::Vector<ComplexDouble, Par> y_v(y, dimN);
   dyfc::blas::Vector<ComplexDouble, Par> r_v(dimN);

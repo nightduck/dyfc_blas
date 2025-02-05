@@ -18,11 +18,11 @@
 #include <cstdlib>
 
 #include "blas.hpp"
-#include "daxpy.hpp"
+#include "saxpy.hpp"
 
-#define RANDOM (double)(rand() % 100) / (double)(rand() % 100 + 1)
+#define RANDOM (float)(rand() % 100) / (float)(rand() % 100 + 1)
 
-bool approximatelyEqual(double a, double b, double epsilon) {
+bool approximatelyEqual(float a, float b, float epsilon) {
   if (a > b) {
     return (a / b) - 1 <= epsilon;
   } else if (a < b) {
@@ -33,11 +33,11 @@ bool approximatelyEqual(double a, double b, double epsilon) {
 }
 
 int main(int argc, char** argv) {
-  double alpha;
-  double x[dimN];
-  double y[dimN];
-  double r[dimN];
-  double r_gold[dimN];
+  float alpha;
+  float x[dimN];
+  float y[dimN];
+  float r[dimN];
+  float r_gold[dimN];
 
   // Initialize variables with random floats
   srand(0xDEADBEEF);
@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
   }
 
   // Make call to kernel
-  daxpy(alpha, x, y, r);
+  saxpy(alpha, x, y, r);
 
   // Verify results. Due to potential floating point error, we need to use an approximate comparison
   int failed_index = -1;

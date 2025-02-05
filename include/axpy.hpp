@@ -47,7 +47,7 @@ void axpy(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y, Vector<
     WideType<T, Par> r_val = T(0);
     WideType<T, Par> x_val = x.read();
     WideType<T, Par> y_val = y.read();
-    for(int i = 0; i < Par; i++) {
+    for (int i = 0; i < Par; i++) {
 #pragma HLS UNROLL
       r_val[i] = alpha * x_val[i] + y_val[i];
     }
