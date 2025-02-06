@@ -23,7 +23,7 @@ namespace dyfc {
 namespace blas {
 
 /**
- * Computes the sum of magnitudes of the vector elements.
+ * Computes the sum of magnitudes of the vector elements, and returns a real scalar
  *
  * r = Σ |Re(x_i)| + |Im(x_i)|
  *
