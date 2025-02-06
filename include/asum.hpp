@@ -48,9 +48,9 @@ void asum(unsigned int n, Vector<T, Par> &x, T &result) {
   for (unsigned int i = 0; i < n; i += Par) {
 #pragma HLS PIPELINE
     x_val = x.read();
-    for (int i = 0; i < Par; i++) {
+    for (unsigned int j = 0; j < Par; j++) {
 #pragma HLS UNROLL
-      x_val[i] = abs(x_val[i]);
+      x_val[j] = abs(x_val[j]);
     }
     prefixsum<T, Par>(x_val, r_val, result);
     result = r_val[Par - 1];
