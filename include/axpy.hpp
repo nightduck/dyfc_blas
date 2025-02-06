@@ -25,10 +25,12 @@ namespace blas {
  * Computes a vector-scalar product and adds the result to a vector.
  *
  * r = alpha * x + y
- * 
+ *
  * This once templated implementation accomodates the caxpy, daxpy, saxpy, and zaxpy calls
  *
- * @tparam T The type of the elements in the vector. Supports any type with defined arithmetic ops.
+ * @tparam T The type of the elements in the vector. Officially only supports float, double,
+ *           Complex<float>, and Complex<double>, but theoretically supports any type with
+ *           defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a power of 2.
  *
  * @param[in]  n The length of the vectors x and y.
@@ -40,7 +42,6 @@ namespace blas {
 template <typename T, unsigned int Par>
 void axpy(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y, Vector<T, Par> &result) {
 #pragma HLS INLINE
-
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
 #endif

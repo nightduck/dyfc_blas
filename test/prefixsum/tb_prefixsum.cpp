@@ -18,11 +18,11 @@
 #include <cstdlib>
 
 #include "blas.hpp"
-#include "saxpy.hpp"
+#include "prefixsum.hpp"
 
-#define RANDOM (float)(rand() % 100) / (float)(rand() % 100 + 1)
+#define RANDOM (double)(rand() % 100) / (double)(rand() % 100 + 1)
 
-bool approximatelyEqual(float a, float b, float epsilon) {
+bool approximatelyEqual(double a, double b, double epsilon) {
   if (a > b) {
     return (a / b) - 1 <= epsilon;
   } else if (a < b) {
@@ -33,28 +33,25 @@ bool approximatelyEqual(float a, float b, float epsilon) {
 }
 
 int main(int argc, char** argv) {
-  float alpha;
-  float x[dimN];
-  float y[dimN];
-  float r[dimN];
-  float r_gold[dimN];
+  double x[dimN];
+  double r[dimN];
+  double r_gold[dimN];
 
   // Initialize variables with random floats
   srand(0xDEADBEEF);
-  alpha = RANDOM;
   for (int i = 0; i < dimN; i++) {
     x[i] = RANDOM;
-    y[i] = RANDOM;
   }
 
   // Compute the correct result to compare against (this fictitious function is an element-wise
   // add along the diagonal)
-  for (int i = 0; i < dimN; i++) {
-    r_gold[i] = alpha * x[i] + y[i];
+  r_gold[0] = x[0];
+  for (int i = 1; i < dimN; i++) {
+    r_gold[i] = x[i] + r_gold[i - 1];
   }
 
   // Make call to kernel
-  saxpy(alpha, x, y, r);
+  prefixsum(x, r);
 
   // Verify results. Due to potential floating point error, we need to use an approximate comparison
   int failed_index = -1;

@@ -12,18 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DYFC_BLAS_HPP
-#define DYFC_BLAS_HPP
+#ifndef DYFC_BLAS_TEST_PREFIX_SUM_HPP
+#define DYFC_BLAS_TEST_PREFIX_SUM_HPP
 
-#include "axpy.hpp"
-#include "asum.hpp"
-#include "complex.hpp"
-#include "prefixsum.hpp"
-// #include "prototypes.hpp"
-#include "example.hpp"
-#include "types.hpp"
+#ifndef dimN
+#define dimN 8192
+#endif
 
-// Converts a 2D array to an unstructured pointer
-#define FLATTEN_MATRIX(x) &x[0][0]
+void prefixsum(double x[dimN], double r[dimN]);
 
-#endif  // DYFC_BLAS_HPP
+#endif  // DYFC_BLAS_TEST_PREFIX_SUM_HPP

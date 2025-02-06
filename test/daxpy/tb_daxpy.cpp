@@ -69,10 +69,6 @@ int main(int argc, char** argv) {
     std::cout << "FAILED TEST" << std::endl;
     std::cout << "r[" << failed_index << "] (" << r[failed_index] << ") != "
               << "r_gold[" << failed_index << "] (" << r_gold[failed_index] << ")" << std::endl;
-    for (int i = 0; i < dimN; i++) {
-      std::cout << "r[" << i << "] = " << r[i] << ", r_gold[" << i << "] = " << r_gold[i]
-                << std::endl;
-    }
     return -1;
   } else {
     std::cout << "PASSED TEST" << std::endl;

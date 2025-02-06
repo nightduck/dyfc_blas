@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DYFC_BLAS_HPP
-#define DYFC_BLAS_HPP
+#ifndef DYFC_BLAS_UTILS_HPP
+#define DYFC_BLAS_UTILS_HPP
 
-#include "axpy.hpp"
-#include "asum.hpp"
-#include "complex.hpp"
-#include "prefixsum.hpp"
-// #include "prototypes.hpp"
-#include "example.hpp"
-#include "types.hpp"
+#include <cstddef>
 
-// Converts a 2D array to an unstructured pointer
-#define FLATTEN_MATRIX(x) &x[0][0]
+namespace dyfc {
+namespace blas {
 
-#endif  // DYFC_BLAS_HPP
+constexpr size_t log2(size_t n) {
+    return ((n < 2) ? 0 : 1 + mylog2(n / 2));
+}
+
+}  // namespace blas
+}  // namespace dyfc
+
+#endif  // DYFC_BLAS_UTILS_HPP
