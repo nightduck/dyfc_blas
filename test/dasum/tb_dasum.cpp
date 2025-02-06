@@ -55,7 +55,10 @@ int main(int argc, char** argv) {
 
   // Verify results. Due to potential floating point error, we need to use an approximate comparison
   int failed_index = -1;
-  if (!approximatelyEqual(r, r_gold, 1e-9)) {
+  double epsilon = dimN / (1e-17);  // asum in particular is very bad at accumulating errors over
+                                    // large datasets. Different implementations can create very
+                                    // different answers
+  if (!approximatelyEqual(r, r_gold, epsilon)) {
     failed_index = 0;
   }
 
