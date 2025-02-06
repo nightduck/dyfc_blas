@@ -108,8 +108,8 @@ void swap(Vector<T, Par> &x, Vector<T, Par> &y) {
  * @param[in]  y The input vector to multiply.
  * @param[out] result The output value to write to.
  */
-template <typename T, unsigned int Par>
-void dot(Vector<T, Par> &x, Vector<T, Par> &y, T &result);
+template <typename T, const unsigned int Par>
+void dot(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &y, T &result) {
 // Special implementation of dot where T is a complex number
 void dotu();
 // Special implementation of dotc where we take the conjugate of x before

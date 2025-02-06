@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DYFC_BLAS_PREFIX_SUM_HPP
-#define DYFC_BLAS_PREFIX_SUM_HPP
+#ifndef DYFC_BLAS_PREFIXSUM_HPP
+#define DYFC_BLAS_PREFIXSUM_HPP
 
 #include "complex.hpp"
 #include "types.hpp"
@@ -44,7 +44,7 @@ void prefixsum(WideType<T, Par> &in, WideType<T, Par> &out, T &offset) {
     x[0][i] = in[i];
   }
 LOOP_WideType_hillis_steele:
-  for (int i = 0; i <= LogPar; i++) {
+  for (int i = 0; i < LogPar; i++) {
     // #pragma HLS PIPELINE
     for (int j = 0; j < Par; j++) {
 #pragma HLS UNROLL
@@ -96,4 +96,4 @@ void prefixsum(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &result) {
 }  // namespace blas
 }  // namespace dyfc
 
-#endif  // DYFC_BLAS_PREFIX_SUM_HPP
+#endif  // DYFC_BLAS_PREFIXSUM_HPP

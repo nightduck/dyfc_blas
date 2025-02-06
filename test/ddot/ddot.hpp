@@ -12,20 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DYFC_BLAS_HPP
-#define DYFC_BLAS_HPP
+#ifndef DYFC_BLAS_TEST_DDOT_HPP
+#define DYFC_BLAS_TEST_DDOT_HPP
 
-#include "complex.hpp"
-#include "types.hpp"
-// #include "prototypes.hpp"
+#ifndef dimN
+#define dimN 8192
+#endif
 
-#include "axpy.hpp"
-#include "asum.hpp"
-#include "dot.hpp"
-#include "example.hpp"
-#include "prefixsum.hpp"
+void ddot(double x[dimN], double y[dimN], double &r);
 
-// Converts a 2D array to an unstructured pointer
-#define FLATTEN_MATRIX(x) &x[0][0]
-
-#endif  // DYFC_BLAS_HPP
+#endif  // DYFC_BLAS_TEST_DDOT_HPP
