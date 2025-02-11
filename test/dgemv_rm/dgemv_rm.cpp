@@ -21,6 +21,8 @@ void dgemv_rm(double alpha, double A[dimM][dimN], double x[dimN], double beta, d
   // EG: 64 for doubles, 128 for floats, 32 for double precision complex
   const int Par = 4096 / 8 / sizeof(double);
 
+#pragma HLS DATAFLOW
+
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
   // constructor
   dyfc::blas::Vector<double, Par> x_v(x, dimN);

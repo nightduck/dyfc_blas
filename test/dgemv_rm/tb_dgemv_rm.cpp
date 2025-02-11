@@ -32,6 +32,24 @@ bool approximatelyEqual(double a, double b, double epsilon) {
   }
 }
 
+void print_vector(double *v, int n) {
+  for (int i = 0; i < n; i++) {
+    printf("%f ", v[i]);
+  }
+  printf("\n");
+  printf("\n");
+}
+
+void print_matrix(double *A, int m, int n) {
+  for (int i = 0; i < m; i++) {
+    for (int j = 0; j < n; j++) {
+      printf("%f ", A[i * n + j]);
+    }
+    printf("\n");
+  }
+  printf("\n");
+}
+
 int main(int argc, char** argv) {
   double alpha;
   double A[dimM][dimN];

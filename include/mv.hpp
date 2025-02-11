@@ -72,7 +72,7 @@ LOOP_gemv_rm:
     LOOP_multiply_elements:
       for (int k = 0; k < Par; k++) {
 #pragma HLS UNROLL
-        r_val[k] = m_val[k] * v_val[k];
+        r_val[k] = alpha * m_val[k] * v_val[k];
       }
       prefixsum<T, Par>(r_val, rsum_val, r);
       r = rsum_val[Par - 1];
@@ -151,7 +151,10 @@ template <typename T, const unsigned int Par, MajorOrder Order = RowMajor>
 void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Par, Order> &A, Vector<T, Par> &x,
         T beta, Vector<T, Par> &y, Vector<T, Par> &result) {
 #pragma HLS INLINE
-#pragma HLS PIPELINE
+#ifndef __SYNTHESIS__
+  assert((n % Par) == 0);
+  assert((m % Par) == 0);
+#endif
   Vector<T, Par> Ax(m);
   mv(m, n, alpha, A, x, Ax);
   axpy(m, beta, y, Ax, result);

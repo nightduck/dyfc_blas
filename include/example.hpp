@@ -65,7 +65,7 @@ LOOP_example_inner:for (unsigned int k = 0; k < n; k += Par) {
         unsigned int l = i + j - k;
         WideType<T, Par> A_val = A.read();
         if (j + k == 0) {
-#pragma HLS OCCURENCE cycle=n
+#pragma HLS OCCURRENCE cycle=n
           x_val = x.read();
         }
         if (l < Par) {

@@ -16,10 +16,10 @@
 #define DYFC_BLAS_TEST_DGEMV_RM_HPP
 
 #ifndef dimN
-#define dimN 128
+#define dimN 256
 #endif
 #ifndef dimM
-#define dimM 256
+#define dimM 512
 #endif
 
 void dgemv_rm(double alpha, double A[dimM][dimN], double x[dimN], double beta, double y[dimN], double r[dimN]);

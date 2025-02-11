@@ -302,7 +302,7 @@ class Matrix {
   /**
    * Creates a matrix and fills it with a 2D array
    *
-   * @param in_array The array to fill the vector with.
+   * @param in_array The array to fill the vector with. Memory is assumed to be row-major order
    * @param Rows The number of rows in the matrix
    * @param Cols The number of columns in the matrix
    */
