@@ -47,7 +47,7 @@ constexpr size_t log2(size_t n) { return ((n < 2) ? 0 : 1 + log2(n / 2)); }
  * @tparam T The type of the elements in the vector. Supports any type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a power of 2.
  */
-template <typename T, unsigned int Par>
+template <typename T, const unsigned int Par>
 class Vector {
   hls::stream<WideType<T, Par>> stream_;
   const size_t length_;
@@ -74,7 +74,8 @@ class Vector {
    * @param stream The stream to use as the underlying data structure
    * @param Length The length of the vector
    */
-  Vector(hls::stream<WideType<T, Par>> &stream, const unsigned int Length) : stream_(stream), length_(Length) {
+  Vector(hls::stream<WideType<T, Par>> &stream, const unsigned int Length)
+      : stream_(stream), length_(Length) {
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
@@ -115,7 +116,7 @@ class Vector {
    */
   Vector(T *in_array, const unsigned int length) : stream_(), length_(length) {
 #pragma HLS INLINE
-#pragma HLS ARRAY_PARTITION variable=in_array type=cyclic factor=Par
+#pragma HLS ARRAY_PARTITION variable = in_array type = cyclic factor = Par
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
     assert(("length must be greater than 0", length > 0));
@@ -159,7 +160,7 @@ class Vector {
    */
   void write(T *out_array) {
 #pragma HLS INLINE
-#pragma HLS ARRAY_PARTITION variable=out_array type=cyclic factor=Par
+#pragma HLS ARRAY_PARTITION variable = out_array type = cyclic factor = Par
     for (size_t i = 0; i < length_; i += Par) {
 #pragma HLS PIPELINE
       WideType<T, Par> value = stream_.read();
@@ -256,7 +257,7 @@ class Vector {
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
  */
-template <typename T, unsigned int Par, MajorOrder Order = RowMajor>
+template <typename T, const unsigned int Par, MajorOrder Order = RowMajor>
 class Matrix {
   hls::stream<WideType<T, Par>> stream_;
   const unsigned int rows_;
@@ -302,13 +303,14 @@ class Matrix {
   /**
    * Creates a matrix and fills it with a 2D array
    *
-   * @param in_array The array to fill the vector with. Memory is assumed to be row-major order
+   * @param in_array The array to fill the vector with. Memory is assumed to be arranaged in order
+   * matching Order specified in the class template
    * @param Rows The number of rows in the matrix
    * @param Cols The number of columns in the matrix
    */
   Matrix(T *in_array, const unsigned int Rows, const unsigned int Cols) : rows_(Rows), cols_(Cols) {
 #pragma HLS INLINE
-#pragma HLS ARRAY_PARTITION variable=in_array type=cyclic factor=Par
+#pragma HLS ARRAY_PARTITION variable = in_array type = cyclic factor = Par
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
     assert(("Rows must be greater than 0", Rows > 0));
@@ -545,6 +547,20 @@ class HermitianMatrix : public Matrix<T, Par, Order> {};
  */
 template <typename T, unsigned int Par, unsigned int Diagonals, UpperLower UpLo = Upper>
 class HermitianBandedMatrix : public BandedMatrix<T, Par, Diagonals, Diagonals> {};
+
+/**
+ * Transposes a column-major matrix into a row-major matrix, or vice versa.
+ * Doesn't move any values, just changes the type. This is analogous to the TRANSPOSE flag used in
+ * the BLAS standard.
+ */
+template <typename T, const unsigned int Par>
+Matrix<T, Par, RowMajor> transpose(Matrix<T, Par, ColMajor> &A) {
+  return Matrix<T, Par, RowMajor>(A.stream_, A.cols(), A.rows());
+}
+template <typename T, unsigned int Par>
+Matrix<T, Par, ColMajor> transpose(Matrix<T, Par, RowMajor> &A) {
+  return Matrix<T, Par, ColMajor>(A.stream_, A.rows(), A.cols());
+}
 
 }  // namespace blas
 }  // namespace dyfc

@@ -43,10 +43,15 @@ namespace blas {
 template <typename T, const unsigned int Par, const MajorOrder Order = RowMajor>
 void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Par, Order> &A, Vector<T, Par> &x,
         Vector<T, Par> &result) {
-#pragma HLS INLINE
+// #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
   assert((m % Par) == 0);
+  assert(A.cols() == n);
+  assert(A.rows() == m);
+  assert(x.shape() == n);
+  assert(result.shape() == m);
+
 #endif
   if (Order == RowMajor) {
   T r = 0;
@@ -85,43 +90,42 @@ LOOP_gemv_rm:
       }
     }
   }
-  } else if (Order == ColMajor) {
-    #ifndef __SYNTHESIS__
-      assert(("Not implemented yet", false));
-    #endif
-  LOOP_gemv_cm:
-    hls::stream<WideType<T, Par>> ring_buffer;
+  } else if (Order == ColMajor) {    
+    WideType<T, Par> ring_buffer[m/Par];
     WideType<T, Par> v_val = 0;
 
-    for (size_t i = 0; i < n; i++)
-    {
+LOOP_gemv_cm:
+    for (size_t i = 0; i < n; i++) {
       for (size_t j = 0; j < m; j+=Par) {
         WideType<T, Par> m_val = A.read();
         WideType<T, Par> r_val;
-        WideType<T, Par> rr_val = 0;
+        WideType<T, Par> rr_val = 0;  // Running sum of these rows
         if (i > 0) {
-          rr_val = ring_buffer.read();
+          // rr_val = ring_buffer.read();
+          rr_val = ring_buffer[j/Par];
         }
-        if (j == 0) {
+        if (j == 0 && i % Par == 0) {
           v_val = x.read();
         }
         for (int k = 0; k < Par; k++) {
   #pragma HLS UNROLL
-          r_val[k] = m_val[k] * v_val[k] + rr_val[k];
+          r_val[k] = alpha * m_val[k] * v_val[i % Par] + rr_val[k];
         }
         if (i < n-1) {
-          ring_buffer.write(r_val);
+          // ring_buffer.write(r_val);
+          ring_buffer[j/Par] = r_val;
         } else {
           result.write(r_val);
         }
       }
     }
   } else {
-    // There should be any other option
+    // There shouldn't be any other option
     #ifndef __SYNTHESIS__
       assert(("Invalid MajorOrder option (this shouldn't be possible, wtf did you do?)", false));
     #endif
   }
+  return;
 }
 // TODO: Subtemplate for trmv, tbmv, tpmv
 // TODO: Specific implementations for the standard: strmv, dtrmv, ctrmv, ztrmv,
@@ -154,10 +158,24 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Par, Orde
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
   assert((m % Par) == 0);
+  assert(A.cols() == n);
+  assert(A.rows() == m);
+  assert(x.shape() == n);
+  assert(y.shape() == m);
+  assert(result.shape() == m);
 #endif
   Vector<T, Par> Ax(m);
   mv(m, n, alpha, A, x, Ax);
   axpy(m, beta, y, Ax, result);
+
+
+  #ifndef __SYNTHESIS__
+    assert(("Matrix isn't empty", A.size() == 0));
+    assert(("Vector x isn't empty", x.size() == 0));
+    assert(("Vector y isn't empty", y.size() == 0));
+    assert(("Intermediary vector Ax isn't empty", Ax.size() == 0));
+  #endif
+  return;
 }
 // TODO: Subtemplates for gemv, hemv, symv, gbmv, hbmv, sbmv, hpmv, spmv
 // TODO: Specific implementations for the standard: cgemv, dgemv, sgemv, zgemv,
