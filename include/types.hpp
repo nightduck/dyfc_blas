@@ -153,6 +153,7 @@ class Vector {
     stream_.write(value);
   }
 
+  // TODO: Rename this to write_to_memory or something
   /**
    * Writes the stream to memory
    *
@@ -354,6 +355,24 @@ class Matrix {
     }
   }
 
+  // Matrix can't be copied.
+  Matrix(const Matrix &other) = delete;
+  Matrix &operator=(const Matrix &other) = delete;
+
+  // Matrix can be moved, but this consumes it
+  Matrix(Matrix &&other) noexcept
+      : stream_(std::move(other.stream_)), rows_(other.rows_), cols_(other.cols_) {
+    // TODO: Set consume flag when that's implemented
+  }
+  Matrix &operator=(Matrix &&other) noexcept {
+    if (this != &other) {
+      stream_ = other.stream_;
+      rows_ = other.rows_;
+      cols_ = other.cols_;
+    }
+    return *this;
+  }
+
   /**
    * Reads from the underlying stream
    *
@@ -372,6 +391,56 @@ class Matrix {
   void write(WideType<T, Par> value) {
 #pragma HLS INLINE
     stream_.write(value);
+  }
+
+// TODO: Allow a col-major matrix to write to row-major memory and vice versa once you can figure
+//       out why it creates an II violation (or how to appropriately pragma it)
+// template<MajorOrder OutputOrder = Order>
+//  * @tparam OutputOrder The major order of the memory. Can be either RowMajor or ColMajor.
+//  *         Defaults to whatever order the matrix is in.
+  
+  /**
+   * Writes the stream to memory.
+   * 
+   *
+   * @param value The pointer to memory to write the stream to.
+   */
+  void to_memory(T *out_array) {
+#pragma HLS INLINE
+#pragma HLS ARRAY_PARTITION variable = out_array type = cyclic factor = Par
+    if (Order == RowMajor) {
+      for (size_t i = 0; i < rows_; i++) {
+        for (size_t j = 0; j < cols_; j += Par) {
+#pragma HLS PIPELINE
+#pragma HLS LOOP_FLATTEN
+          WideType<T, Par> value = stream_.read();
+          for (size_t k = 0; k < Par; k++) {
+#pragma HLS UNROLL
+            // if (OutputOrder == RowMajor) {
+              out_array[i * cols_ + j + k] = value[k];
+            // } else {
+            //   out_array[(j + k) * rows_ + i] = value[k];
+            // }
+          }
+        }
+      }
+    } else {
+      for (size_t i = 0; i < cols_; i++) {
+        for (size_t j = 0; j < rows_; j += Par) {
+#pragma HLS PIPELINE
+#pragma HLS LOOP_FLATTEN
+          WideType<T, Par> value = stream_.read();
+          for (size_t k = 0; k < Par; k++) {
+#pragma HLS UNROLL
+            // if (OutputOrder == RowMajor) {
+            //   out_array[(j + k) * cols_ + i] = value[k];
+            // } else {
+              out_array[i * rows_ + j + k] = value[k];
+            // }
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -549,17 +618,48 @@ template <typename T, unsigned int Par, unsigned int Diagonals, UpperLower UpLo 
 class HermitianBandedMatrix : public BandedMatrix<T, Par, Diagonals, Diagonals> {};
 
 /**
- * Transposes a column-major matrix into a row-major matrix, or vice versa.
+ * Transposes a column-major matrix into a row-major matrix.
  * Doesn't move any values, just changes the type. This is analogous to the TRANSPOSE flag used in
  * the BLAS standard.
+ * 
+ * @tparam T The type of the elements in the matrix. Supports any type with defined arithmetic ops.
+ * @tparam Par Number of elements retrieved in one read operation. Must be a power of 2.
+ * 
+ * @param A The column-major matrix to read from
+ * @param AT The row-major matrix to write to
  */
 template <typename T, const unsigned int Par>
-Matrix<T, Par, RowMajor> transpose(Matrix<T, Par, ColMajor> &A) {
-  return Matrix<T, Par, RowMajor>(A.stream_, A.cols(), A.rows());
+void transpose(Matrix<T, Par, ColMajor> &A, Matrix<T, Par, RowMajor> &AT) {
+#ifndef __SYNTHESIS__
+  assert(("Dimensions of A and AT must match", A.rows() == AT.cols() && A.cols() == AT.rows()));
+#endif
+  for (size_t i = 0; i < A.cols(); i++) {
+    for (size_t j = 0; j < A.rows(); j += Par) {
+      AT.write(A.read());
+    }
+  }
 }
-template <typename T, unsigned int Par>
-Matrix<T, Par, ColMajor> transpose(Matrix<T, Par, RowMajor> &A) {
-  return Matrix<T, Par, ColMajor>(A.stream_, A.rows(), A.cols());
+
+/**
+ * Transposes a row-major matrix into a column-major matrix.
+ * Doesn't move any values, just changes the type. This is analogous to the TRANSPOSE flag used in
+ * 
+ * @tparam T The type of the elements in the matrix. Supports any type with defined arithmetic ops.
+ * @tparam Par Number of elements retrieved in one read operation. Must be a power of 2.
+ * 
+ * @param A The row-major matrix to read from
+ * @param AT The column-major matrix to write to
+ */
+template <typename T, const unsigned int Par>
+void transpose(Matrix<T, Par, RowMajor> &A, Matrix<T, Par, ColMajor> &AT) {
+#ifndef __SYNTHESIS__
+  assert(("Dimensions of A and AT must match", A.rows() == AT.cols() && A.cols() == AT.rows()));
+#endif
+  for (size_t i = 0; i < A.rows(); i++) {
+    for (size_t j = 0; j < A.cols(); j += Par) {
+      AT.write(A.read());
+    }
+  }
 }
 
 }  // namespace blas
