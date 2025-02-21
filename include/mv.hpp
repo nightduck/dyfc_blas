@@ -64,8 +64,8 @@ LOOP_gemv_rm:
 #pragma HLS PIPELINE
       WideType<T, Par> m_val = A.read();
       WideType<T, Par> v_val;
-      WideType<T, Par> r_val = 0;
-      WideType<T, Par> rsum_val = 0;
+      WideType<T, Par> r_val = T(0);
+      WideType<T, Par> rsum_val = T(0);
       if (i > 0) {
         v_val = ringbuf_x.read();
       } else {
@@ -92,14 +92,14 @@ LOOP_gemv_rm:
   }
   } else if (Order == ColMajor) {    
     WideType<T, Par> ring_buffer[m/Par];
-    WideType<T, Par> v_val = 0;
+    WideType<T, Par> v_val = T(0);
 
 LOOP_gemv_cm:
     for (size_t i = 0; i < n; i++) {
       for (size_t j = 0; j < m; j+=Par) {
         WideType<T, Par> m_val = A.read();
         WideType<T, Par> r_val;
-        WideType<T, Par> rr_val = 0;  // Running sum of these rows
+        WideType<T, Par> rr_val = T(0);  // Running sum of these rows
         if (i > 0) {
           // rr_val = ring_buffer.read();
           rr_val = ring_buffer[j/Par];
