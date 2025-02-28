@@ -50,11 +50,37 @@ void axpy(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y, Vector<
     WideType<T, Par> r_val = T(0);
     WideType<T, Par> x_val = x.read();
     WideType<T, Par> y_val = y.read();
-    for (int i = 0; i < Par; i++) {
+    for (int j = 0; j < Par; j++) {
 #pragma HLS UNROLL
-      r_val[i] = alpha * x_val[i] + y_val[i];
+      r_val[j] = alpha * x_val[j] + y_val[j];
     }
     result.write(r_val);
+  }
+}
+
+template<typename T, unsigned int Par, MajorOrder Order>
+void axpy(unsigned int n, unsigned int m, T alpha, Matrix<T, Par, Order> &x, Matrix<T, Par, Order> &y, Matrix<T, Par, Order> &result) {
+#pragma HLS INLINE
+#ifndef __SYNTHESIS__
+  assert((n % Par) == 0);
+  assert((m % Par) == 0);
+  assert(n == y.rows());
+  assert(m == y.cols());
+  assert(x.rows() == y.rows());
+  assert(x.cols() == y.cols());
+#endif
+  for (unsigned int i = 0; i < n; i++) {
+    for (unsigned int j = 0; j < m; j += Par) {
+#pragma HLS PIPELINE
+      WideType<T, Par> r_val = T(0);
+      WideType<T, Par> x_val = x.read();
+      WideType<T, Par> y_val = y.read();
+      for (int k = 0; k < Par; k++) {
+#pragma HLS UNROLL
+        r_val[k] = alpha * x_val[k] + y_val[k];
+      }
+      result.write(r_val);
+    }
   }
 }
 

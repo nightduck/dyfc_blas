@@ -43,7 +43,7 @@ namespace blas {
 template <typename T, const unsigned int Par, const MajorOrder Order = RowMajor>
 void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Par, Order> &A, Vector<T, Par> &x,
         Vector<T, Par> &result) {
-// #pragma HLS INLINE
+#pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
   assert((m % Par) == 0);
@@ -86,7 +86,7 @@ LOOP_gemv_rm:
         if (i % Par == Par - 1) {
           result.write(r_out);
         }
-        r = 0;
+        r = T(0);
       }
     }
   }

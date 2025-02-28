@@ -12,22 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DYFC_BLAS_HPP
-#define DYFC_BLAS_HPP
+#ifndef DYFC_BLAS_TEST_DGEMM_RC_HPP
+#define DYFC_BLAS_TEST_DGEMM_RC_HPP
 
-#include "complex.hpp"
-#include "types.hpp"
-// #include "prototypes.hpp"
+#ifndef dimN
+#define dimN 256
+#endif
+#ifndef dimM
+#define dimM 512
+#endif
+#ifndef dimK
+#define dimK 512
+#endif
 
-#include "axpy.hpp"
-#include "asum.hpp"
-#include "dot.hpp"
-#include "example.hpp"
-#include "mm.hpp"
-#include "mv.hpp"
-#include "prefixsum.hpp"
+void dgemm_rc(double alpha, double A[dimM][dimK], double B[dimK][dimN], double beta, double C[dimM][dimN], double r[dimM][dimN]);
 
-// Converts a 2D array to an unstructured pointer
-#define FLATTEN_MATRIX(x) &x[0][0]
-
-#endif  // DYFC_BLAS_HPP
+#endif  // DYFC_BLAS_TEST_DGEMM_RC_HPP

@@ -444,6 +444,32 @@ class Matrix {
   }
 
   /**
+   * Duplicates the matrix N times. Consumes the contents of the matrix.
+   *
+   * @param v The matrix to duplicate the data into
+   * @param n The number of times to duplicate the matrix
+   */
+  void duplicate(Matrix<T, Par> &m, unsigned int n) {
+#pragma HLS INLINE
+    hls::stream<WideType<T, Par>> ring_buffer;
+    for (unsigned int i = 0; i < n; i++) {
+      for (unsigned int j = 0; j < this->cols_ * this->rows_; j++) {
+#pragma HLS PIPELINE
+        WideType<T, Par> value;
+        if (i == 0) {
+          value = stream_.read();
+        } else {
+          value = ring_buffer.read();
+        }
+        if (i < n - 1) {
+          ring_buffer.write(value);
+        }
+        m.write(value);
+      }
+    }
+  }
+
+  /**
    * Checks if the underlying stream is empty
    *
    * @return True if the stream is empty, false otherwise.
