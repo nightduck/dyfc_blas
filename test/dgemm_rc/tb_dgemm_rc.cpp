@@ -53,7 +53,7 @@ void print_matrix(double *A, int m, int n) {
 int main(int argc, char** argv) {
   double alpha;
   double A[dimM][dimK];
-  double B[dimK][dimN];
+  double B[dimN][dimK];   // B is stored in col-major order
   double beta;
   double C[dimM][dimN];
   double r[dimM][dimN];
@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
     for (int j = 0; j < dimN; j++) {
       r_gold[i][j] = beta * C[i][j];
       for (int k = 0; k < dimK; k++) {
-        r_gold[i][j] += alpha * A[i][k] * B[k][j];
+        r_gold[i][j] += alpha * A[i][k] * B[j][k];
       }
     }
   }
@@ -95,8 +95,8 @@ int main(int argc, char** argv) {
 
   // Verify results. Due to potential floating point error, we need to use an approximate comparison
   int failed_index = -1;
-  for (int i = 0; i < dimN; i++) {
-    for (int j = 0; j < dimM; j++) {
+  for (int i = 0; i < dimM; i++) {
+    for (int j = 0; j < dimN; j++) {
       if (!approximatelyEqual(r[i][j], r_gold[i][j], 1e-9)) {
         failed_index = i * dimN + j;
         break;

@@ -19,12 +19,12 @@
 #define dimN 256
 #endif
 #ifndef dimM
-#define dimM 512
+#define dimM 128
 #endif
 #ifndef dimK
-#define dimK 512
+#define dimK 192
 #endif
 
-void dgemm_rc(double alpha, double A[dimM][dimK], double B[dimK][dimN], double beta, double C[dimM][dimN], double r[dimM][dimN]);
+void dgemm_rc(double alpha, double A[dimM][dimK], double B[dimN][dimK], double beta, double C[dimM][dimN], double r[dimM][dimN]);
 
 #endif  // DYFC_BLAS_TEST_DGEMM_RC_HPP

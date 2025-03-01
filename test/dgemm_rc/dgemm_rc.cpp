@@ -16,7 +16,7 @@
 
 #include "blas.hpp"
 
-void dgemm_rc(double alpha, double A[dimM][dimK], double B[dimK][dimN], double beta, double C[dimM][dimN], double r[dimM][dimN]) {
+void dgemm_rc(double alpha, double A[dimM][dimK], double B[dimN][dimK], double beta, double C[dimM][dimN], double r[dimM][dimN]) {
   // Suggested parallelism level: 4096 / 8 / sizeof(type)
   // EG: 64 for doubles, 128 for floats, 32 for double precision complex
   const int Par = 4096 / 8 / sizeof(double);
