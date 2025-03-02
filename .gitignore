@@ -23,3 +23,9 @@
 
 #Ignore VSCode artifacts
 .vscode/*
+
+#Ignore test build
+test/*/build
+test/*/.Xil
+test/*/*.log
+test/*/vitis-comp.json

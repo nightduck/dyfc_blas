@@ -1,0 +1,28 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest  # TODO: Create docker container with Vitis
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Vitis
+      run: |
+        # Add commands to set up Vitis environment if needed
+        # For example, source the Vitis settings script
+        source /opt/Xilinx/Vitis/2023.1/settings64.sh
+
+    - name: Run tests
+      run: |
+        chmod +x /workspace/dyfc_blas/test.sh
+        /workspace/dyfc_blas/test.sh
