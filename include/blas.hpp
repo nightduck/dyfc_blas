@@ -22,7 +22,6 @@
 #include "axpy.hpp"
 #include "asum.hpp"
 #include "dot.hpp"
-#include "example.hpp"
 #include "mm.hpp"
 #include "mv.hpp"
 #include "prefixsum.hpp"
