@@ -21,6 +21,10 @@
 #define dimN 8192
 #endif
 
+// These are reference numbers for the benchmark
+#define dimNSweepMin 2048
+#define dimNSweepMax 67108864
+
 using ComplexFloat = dyfc::blas::Complex<float>;
 
 void caxpy(ComplexFloat alpha, ComplexFloat x[dimN], ComplexFloat y[dimN], ComplexFloat r[dimN]);

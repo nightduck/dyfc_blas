@@ -16,7 +16,7 @@
 
 #include "blas.hpp"
 
-// Test both the basic asum and the prefix sum calls
+// Test both the prefix sum calls
 void prefixsum(double x[dimN], double r[dimN]) {
   // Suggested parallelism level: 4096 / 8 / sizeof(type)
   // EG: 64 for doubles, 128 for floats, 32 for double precision complex
