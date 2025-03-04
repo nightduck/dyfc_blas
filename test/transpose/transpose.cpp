@@ -18,6 +18,8 @@
 
 void transpose_krnl(double A[dimN][dimM], double ArTc[dimN][dimM], double ArTr[dimM][dimN],
                double AcTr[dimN][dimM], double AcTc[dimM][dimN]) {
+#pragma HLS DATAFLOW
+                  
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
   // constructor
   // dyfc::blas::Matrix<double, Par, dyfc::blas::RowMajor> Ar_m1(FLATTEN_MATRIX(A), dimN, dimM);
