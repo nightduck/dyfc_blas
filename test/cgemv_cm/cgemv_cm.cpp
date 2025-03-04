@@ -18,21 +18,17 @@
 
 void cgemv_cm(ComplexFloat alpha, ComplexFloat A[dimN][dimM], ComplexFloat x[dimN],
               ComplexFloat beta, ComplexFloat y[dimN], ComplexFloat r[dimN]) {
-  // Suggested parallelism level: 4096 / 8 / sizeof(type)
-  // EG: 64 for doubles, 128 for floats, 32 for double precision complex
-  const int Par = 4096 / 8 / sizeof(ComplexFloat);
-
 #pragma HLS DATAFLOW
 
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
   // constructor
-  dyfc::blas::Vector<ComplexFloat, Par> x_v(x, dimN);
-  dyfc::blas::Vector<ComplexFloat, Par> y_v(y, dimM);
-  dyfc::blas::Matrix<ComplexFloat, Par, dyfc::blas::ColMajor> A_m(FLATTEN_MATRIX(A), dimM, dimN);
-  dyfc::blas::Vector<ComplexFloat, Par> r_v(dimM);
+  dyfc::blas::Vector<ComplexFloat> x_v(x, dimN);
+  dyfc::blas::Vector<ComplexFloat> y_v(y, dimM);
+  dyfc::blas::Matrix<ComplexFloat, dyfc::blas::ColMajor> A_m(FLATTEN_MATRIX(A), dimM, dimN);
+  dyfc::blas::Vector<ComplexFloat> r_v(dimM);
 
   // Call a templated version of the blas function being tested
-  dyfc::blas::mv<ComplexFloat, Par, dyfc::blas::ColMajor>(dimM, dimN, alpha, A_m, x_v, beta, y_v,
+  dyfc::blas::mv<ComplexFloat, dyfc::blas::ColMajor>(dimM, dimN, alpha, A_m, x_v, beta, y_v,
                                                            r_v);
 
   // Write the result back to the output array

@@ -33,7 +33,7 @@ namespace blas {
  * @param[out] out The output vector to write to.
  * @param[in]  offset The value to add to all elements in the vector.
  */
-template <typename T, const unsigned int Par>
+template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void prefixsum(WideType<T, Par> &in, WideType<T, Par> &out, T &offset) {
 #pragma HLS INLINE
   constexpr int LogPar = log2(Par);
@@ -75,7 +75,7 @@ LOOP_WideType_hillis_steele:
  * @param[in]  x The input vector to compute the prefix sum of.
  * @param[out] result The output vector to write to.
  */
-template <typename T, const unsigned int Par>
+template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void prefixsum(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &result) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__

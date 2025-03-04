@@ -17,18 +17,14 @@
 #include "blas.hpp"
 
 void caxpy(ComplexFloat alpha, ComplexFloat x[dimN], ComplexFloat y[dimN], ComplexFloat r[dimN]) {
-  // Suggested parallelism level: 4096 / 8 / sizeof(type)
-  // EG: 64 for doubles, 128 for floats, 32 for double precision complex
-  const int Par = 4096 / 8 / sizeof(ComplexFloat);
-
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
   // constructor
-  dyfc::blas::Vector<ComplexFloat, Par> x_v(x, dimN);
-  dyfc::blas::Vector<ComplexFloat, Par> y_v(y, dimN);
-  dyfc::blas::Vector<ComplexFloat, Par> r_v(dimN);
+  dyfc::blas::Vector<ComplexFloat> x_v(x, dimN);
+  dyfc::blas::Vector<ComplexFloat> y_v(y, dimN);
+  dyfc::blas::Vector<ComplexFloat> r_v(dimN);
 
   // Call a templated version of the blas function being tested
-  dyfc::blas::axpy<ComplexFloat, Par>(dimN, alpha, x_v, y_v, r_v);
+  dyfc::blas::axpy<ComplexFloat>(dimN, alpha, x_v, y_v, r_v);
 
   // Write the result back to the output array
   r_v.write(r);

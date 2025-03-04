@@ -18,20 +18,16 @@
 
 void transpose_krnl(double A[dimN][dimM], double ArTc[dimN][dimM], double ArTr[dimM][dimN],
                double AcTr[dimN][dimM], double AcTc[dimM][dimN]) {
-  // Suggested parallelism level: 4096 / 8 / sizeof(type)
-  // EG: 64 for doubles, 128 for floats, 32 for double precision complex
-  const int Par = 4096 / 8 / sizeof(double);
-
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
   // constructor
   // dyfc::blas::Matrix<double, Par, dyfc::blas::RowMajor> Ar_m1(FLATTEN_MATRIX(A), dimN, dimM);
-  dyfc::blas::Matrix<double, Par, dyfc::blas::RowMajor> Ar_m2(FLATTEN_MATRIX(A), dimN, dimM);
-  dyfc::blas::Matrix<double, Par, dyfc::blas::ColMajor> Ac_m1(FLATTEN_MATRIX(A), dimM, dimN);
+  dyfc::blas::Matrix<double, dyfc::blas::RowMajor> Ar_m2(FLATTEN_MATRIX(A), dimN, dimM);
+  dyfc::blas::Matrix<double, dyfc::blas::ColMajor> Ac_m1(FLATTEN_MATRIX(A), dimM, dimN);
   // dyfc::blas::Matrix<double, Par, dyfc::blas::ColMajor> Ac_m2(FLATTEN_MATRIX(A), dimM, dimN);
 
   // dyfc::blas::Matrix<double, Par, dyfc::blas::ColMajor> ArT_m1(dimM, dimN);
-  dyfc::blas::Matrix<double, Par, dyfc::blas::ColMajor> ArT_m2(dimM, dimN);
-  dyfc::blas::Matrix<double, Par, dyfc::blas::RowMajor> AcT_m1(dimN, dimM);
+  dyfc::blas::Matrix<double, dyfc::blas::ColMajor> ArT_m2(dimM, dimN);
+  dyfc::blas::Matrix<double, dyfc::blas::RowMajor> AcT_m1(dimN, dimM);
   // dyfc::blas::Matrix<double, Par, dyfc::blas::RowMajor> AcT_m2(dimN, dimM);
 
   // Perform the transpose

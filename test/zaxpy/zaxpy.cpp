@@ -18,18 +18,14 @@
 
 void zaxpy(ComplexDouble alpha, ComplexDouble x[dimN], ComplexDouble y[dimN],
            ComplexDouble r[dimN]) {
-  // Suggested parallelism level: 4096 / 8 / sizeof(type)
-  // EG: 64 for doubles, 128 for floats, 32 for double precision complex
-  const int Par = 4096 / 8 / sizeof(ComplexDouble);
-
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
   // constructor
-  dyfc::blas::Vector<ComplexDouble, Par> x_v(x, dimN);
-  dyfc::blas::Vector<ComplexDouble, Par> y_v(y, dimN);
-  dyfc::blas::Vector<ComplexDouble, Par> r_v(dimN);
+  dyfc::blas::Vector<ComplexDouble> x_v(x, dimN);
+  dyfc::blas::Vector<ComplexDouble> y_v(y, dimN);
+  dyfc::blas::Vector<ComplexDouble> r_v(dimN);
 
   // Call a templated version of the blas function being tested
-  dyfc::blas::axpy<ComplexDouble, Par>(dimN, alpha, x_v, y_v, r_v);
+  dyfc::blas::axpy<ComplexDouble>(dimN, alpha, x_v, y_v, r_v);
 
   // Write the result back to the output array
   r_v.write(r);

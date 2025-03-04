@@ -17,21 +17,17 @@
 #include "blas.hpp"
 
 void dgemm_rc(double alpha, double A[dimM][dimK], double B[dimN][dimK], double beta, double C[dimM][dimN], double r[dimM][dimN]) {
-  // Suggested parallelism level: 4096 / 8 / sizeof(type)
-  // EG: 64 for doubles, 128 for floats, 32 for double precision complex
-  const int Par = 4096 / 8 / sizeof(double);
-
 #pragma HLS DATAFLOW
 
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
   // constructor
-  dyfc::blas::Matrix<double, Par, dyfc::blas::RowMajor> A_m(FLATTEN_MATRIX(A), dimM, dimK);
-  dyfc::blas::Matrix<double, Par, dyfc::blas::ColMajor> B_m(FLATTEN_MATRIX(B), dimK, dimN);
-  dyfc::blas::Matrix<double, Par, dyfc::blas::RowMajor> C_m(FLATTEN_MATRIX(C), dimM, dimN);
-  dyfc::blas::Matrix<double, Par, dyfc::blas::RowMajor> r_m(dimM, dimN);
+  dyfc::blas::Matrix<double, dyfc::blas::RowMajor> A_m(FLATTEN_MATRIX(A), dimM, dimK);
+  dyfc::blas::Matrix<double, dyfc::blas::ColMajor> B_m(FLATTEN_MATRIX(B), dimK, dimN);
+  dyfc::blas::Matrix<double, dyfc::blas::RowMajor> C_m(FLATTEN_MATRIX(C), dimM, dimN);
+  dyfc::blas::Matrix<double, dyfc::blas::RowMajor> r_m(dimM, dimN);
 
   // Call a templated version of the blas function being tested
-  dyfc::blas::mm<double, Par>(dimM, dimN, dimK, alpha, A_m, B_m, beta, C_m, r_m);
+  dyfc::blas::mm<double>(dimM, dimN, dimK, alpha, A_m, B_m, beta, C_m, r_m);
 
   // Write the result back to the output array
   r_m.to_memory(FLATTEN_MATRIX(r));

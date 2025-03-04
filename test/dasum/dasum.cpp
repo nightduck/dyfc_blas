@@ -18,16 +18,12 @@
 
 // Test both the basic asum and the prefix sum calls
 void dasum(double x[dimN], double &r) {
-  // Suggested parallelism level: 4096 / 8 / sizeof(type)
-  // EG: 64 for doubles, 128 for floats, 32 for double precision complex
-  const int Par = 4096 / 8 / sizeof(double);
-
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
   // constructor
-  dyfc::blas::Vector<double, Par> x_v(x, dimN);
+  dyfc::blas::Vector<double> x_v(x, dimN);
 
   // Call a templated version of the blas function being tested
-  dyfc::blas::asum<double, Par>(dimN, x_v, r);
+  dyfc::blas::asum<double>(dimN, x_v, r);
 
   return;
 }

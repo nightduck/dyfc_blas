@@ -29,14 +29,14 @@ namespace blas {
  *
  * @tparam T The type of the elements in the matrix and vectors. Supports any
  * type with defined arithmetic ops.
- * @tparam Par Number of elements retrieved in one read operation. Must be a
- * power of 2.
  * @tparam OrderA The major order of the matrix A. Can be either RowMajor or
  * ColMajor.
  * @tparam OrderB The major order of the matrix B. Can be either RowMajor or
  * ColMajor.
  * @tparam UpLo Whether the matrix is upper or lower triangular. This is ignored
  * for general matrices
+ * @tparam Par Number of elements retrieved in one read operation. Must be a
+ * power of 2.
  *
  * @param[in]  m The number of rows in the matrix A and the output matrix result.
  * @param[in]  n The number of columns in the matrix B and the output matrix result.
@@ -46,10 +46,10 @@ namespace blas {
  * @param[in]  B The input matrix to multiply.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, MajorOrder OrderA = RowMajor, MajorOrder OrderB = ColMajor,
-          UpperLower UpLo = Upper>
-void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, OrderA> &A,
-        Matrix<T, Par, OrderB> &B, Matrix<T, Par, OrderA> &result) {
+template <typename T, const MajorOrder OrderA = RowMajor, const MajorOrder OrderB = ColMajor,
+          const UpperLower UpLo = Upper, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, OrderA, Par> &A,
+        Matrix<T, OrderB, Par> &B, Matrix<T, OrderA, Par> &result) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
@@ -113,13 +113,13 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, 
         }
       }
     }
-    #ifndef __SYNTHESIS__
-      assert(A.empty());
-      assert(B.empty());
-      assert(A_row_stream.empty());
-      assert(B_repeat_stream.empty());
-      assert(result.size() == m * n / Par);
-    #endif
+#ifndef __SYNTHESIS__
+    assert(A.empty());
+    assert(B.empty());
+    assert(A_row_stream.empty());
+    assert(B_repeat_stream.empty());
+    assert(result.size() == m * n / Par);
+#endif
   } else if (OrderA == ColMajor && OrderB == RowMajor) {
 // There shouldn't be any other option
 #ifndef __SYNTHESIS__
@@ -136,7 +136,6 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, 
     assert(("Invalid MajorOrder option (this shouldn't be possible, wtf did you do?)", false));
 #endif
   }
-
 }
 // TODO: Subtemplates for gemm, hemm, symm, trmm
 // TODO: Specific implementations for the standard: cgemm, dgemm, sgemm, zgemm,
@@ -150,14 +149,14 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, 
  *
  * @tparam T The type of the elements in the matrix and vectors. Supports any
  * type with defined arithmetic ops.
- * @tparam Par Number of elements retrieved in one read operation. Must be a
- * power of 2.
  * @tparam OrderA The major order of the matrix A. Can be either RowMajor or
  * ColMajor.
  * @tparam OrderB The major order of the matrix B. Can be either RowMajor or
  * ColMajor.
  * @tparam UpLo Whether the matrix is upper or lower triangular. This is ignored
  * for general matrices
+ * @tparam Par Number of elements retrieved in one read operation. Must be a
+ * power of 2.
  *
  * @param[in]  m The number of rows in the matrix A and the output matrix result.
  * @param[in]  n The number of columns in the matrix B and the output matrix result.
@@ -169,11 +168,11 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, 
  * @param[in]  C The input matrix to add to.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, MajorOrder OrderA = RowMajor, MajorOrder OrderB = ColMajor,
-          UpperLower UpLo = Upper>
-void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, OrderA> &A,
-        Matrix<T, Par, OrderB> &B, T beta, Matrix<T, Par, OrderA> &C,
-        Matrix<T, Par, OrderA> &result) {
+template <typename T, const MajorOrder OrderA = RowMajor, const MajorOrder OrderB = ColMajor,
+          const UpperLower UpLo = Upper, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, OrderA, Par> &A,
+        Matrix<T, OrderB, Par> &B, T beta, Matrix<T, OrderA, Par> &C,
+        Matrix<T, OrderA, Par> &result) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
@@ -190,16 +189,16 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, 
 #endif
 
   if (OrderA != OrderB) {
-    Matrix<T, Par, OrderA> AB(m, n);
+    Matrix<T, OrderA, Par> AB(m, n);
     mm(m, n, k, alpha, A, B, AB);
     axpy(m, n, beta, C, AB, result);
 
-    #ifndef __SYNTHESIS__
-      assert(A.empty());
-      assert(B.empty());
-      assert(C.empty());
-      assert(AB.empty());
-    #endif
+#ifndef __SYNTHESIS__
+    assert(A.empty());
+    assert(B.empty());
+    assert(C.empty());
+    assert(AB.empty());
+#endif
   } else {
 // There shouldn't be any other option
 #ifndef __SYNTHESIS__

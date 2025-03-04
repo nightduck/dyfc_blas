@@ -37,7 +37,7 @@ namespace blas {
  * @param[in]  y The input vector to multiply.
  * @param[out] result The output value to write to.
  */
-template <typename T, const unsigned int Par>
+template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void dot(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &y, T &result) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__

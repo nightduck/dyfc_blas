@@ -39,7 +39,7 @@ namespace blas {
  * @param[in]  y The input vector to add to the result.
  * @param[out] result The output vector to write to.
  */
-template <typename T, unsigned int Par>
+template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void axpy(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y, Vector<T, Par> &result) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
@@ -58,8 +58,9 @@ void axpy(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y, Vector<
   }
 }
 
-template<typename T, unsigned int Par, MajorOrder Order>
-void axpy(unsigned int n, unsigned int m, T alpha, Matrix<T, Par, Order> &x, Matrix<T, Par, Order> &y, Matrix<T, Par, Order> &result) {
+template <typename T, const MajorOrder Order, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+void axpy(unsigned int n, unsigned int m, T alpha, Matrix<T, Order, Par> &x,
+          Matrix<T, Order, Par> &y, Matrix<T, Order, Par> &result) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);

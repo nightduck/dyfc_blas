@@ -29,6 +29,7 @@ namespace blas {
  *
  * @tparam T The type of the elements in the matrix and vectors. Supports any
  * type with defined arithmetic ops.
+ * @tparam Order The order of the matrix. Must be either RowMajor or ColMajor.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
  *
@@ -40,8 +41,8 @@ namespace blas {
  * @param[in]  x The input vector to multiply.
  * @param[out] result The output vector to write to.
  */
-template <typename T, const unsigned int Par, const MajorOrder Order = RowMajor>
-void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Par, Order> &A, Vector<T, Par> &x,
+template <typename T, const MajorOrder Order = RowMajor, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Par> &A, Vector<T, Par> &x,
         Vector<T, Par> &result) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
@@ -139,6 +140,7 @@ LOOP_gemv_cm:
  *
  * @tparam T The type of the elements in the matrix and vectors. Supports any
  * type with defined arithmetic ops.
+ * @tparam Order The order of the matrix A. Either RowMajor or ColMajor.
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
  *
@@ -151,8 +153,8 @@ LOOP_gemv_cm:
  * @param[in]  y The input vector to add to the result.
  * @param[out] result The output vector to write to.
  */
-template <typename T, const unsigned int Par, MajorOrder Order = RowMajor>
-void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Par, Order> &A, Vector<T, Par> &x,
+template <typename T, const MajorOrder Order = RowMajor, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Par> &A, Vector<T, Par> &x,
         T beta, Vector<T, Par> &y, Vector<T, Par> &result) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__

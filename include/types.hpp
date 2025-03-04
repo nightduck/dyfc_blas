@@ -19,6 +19,8 @@
 #include <hls_stream.h>
 #include <hls_vector.h>
 
+#define MAX_BITWIDTH 4096
+
 namespace dyfc {
 namespace blas {
 
@@ -47,7 +49,7 @@ constexpr size_t log2(size_t n) { return ((n < 2) ? 0 : 1 + log2(n / 2)); }
  * @tparam T The type of the elements in the vector. Supports any type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a power of 2.
  */
-template <typename T, const unsigned int Par>
+template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 class Vector {
   hls::stream<WideType<T, Par>> stream_;
   const size_t length_;
@@ -253,12 +255,13 @@ class Vector {
  *
  * @tparam T The type of the elements in the matrix. Supports any type with
  * defined arithmetic ops.
- * @tparam Par Number of elements retrieved in one read operation. Must be a
- * power of 2.
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
+ * @tparam Par Number of elements retrieved in one read operation. Must be a
+ * power of 2.
  */
-template <typename T, const unsigned int Par, MajorOrder Order = RowMajor>
+template <typename T, MajorOrder Order = RowMajor,
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 class Matrix {
   hls::stream<WideType<T, Par>> stream_;
   const unsigned int rows_;
@@ -393,15 +396,15 @@ class Matrix {
     stream_.write(value);
   }
 
-// TODO: Allow a col-major matrix to write to row-major memory and vice versa once you can figure
-//       out why it creates an II violation (or how to appropriately pragma it)
-// template<MajorOrder OutputOrder = Order>
-//  * @tparam OutputOrder The major order of the memory. Can be either RowMajor or ColMajor.
-//  *         Defaults to whatever order the matrix is in.
-  
+  // TODO: Allow a col-major matrix to write to row-major memory and vice versa once you can figure
+  //       out why it creates an II violation (or how to appropriately pragma it)
+  // template<MajorOrder OutputOrder = Order>
+  //  * @tparam OutputOrder The major order of the memory. Can be either RowMajor or ColMajor.
+  //  *         Defaults to whatever order the matrix is in.
+
   /**
    * Writes the stream to memory.
-   * 
+   *
    *
    * @param value The pointer to memory to write the stream to.
    */
@@ -417,7 +420,7 @@ class Matrix {
           for (size_t k = 0; k < Par; k++) {
 #pragma HLS UNROLL
             // if (OutputOrder == RowMajor) {
-              out_array[i * cols_ + j + k] = value[k];
+            out_array[i * cols_ + j + k] = value[k];
             // } else {
             //   out_array[(j + k) * rows_ + i] = value[k];
             // }
@@ -435,7 +438,7 @@ class Matrix {
             // if (OutputOrder == RowMajor) {
             //   out_array[(j + k) * cols_ + i] = value[k];
             // } else {
-              out_array[i * rows_ + j + k] = value[k];
+            out_array[i * rows_ + j + k] = value[k];
             // }
           }
         }
@@ -449,7 +452,7 @@ class Matrix {
    * @param v The matrix to duplicate the data into
    * @param n The number of times to duplicate the matrix
    */
-  void duplicate(Matrix<T, Par> &m, unsigned int n) {
+  void duplicate(Matrix<T, Order, Par> &m, unsigned int n) {
 #pragma HLS INLINE
     hls::stream<WideType<T, Par>> ring_buffer;
     for (unsigned int i = 0; i < n; i++) {
@@ -529,13 +532,14 @@ class Matrix {
  *
  * @tparam T The type of the elements in the matrix. Supports any type with
  * defined arithmetic ops.
- * @tparam Par Number of elements retrieved in one read operation. Must be a
- * power of 2.
  * @tparam SubDiagonals The number of subdiagonals in the matrix.
  * @tparam SupDiagonals The number of superdiagonals in the matrix.
+ * @tparam Par Number of elements retrieved in one read operation. Must be a
+ * power of 2.
  */
-template <typename T, unsigned int Par, unsigned int SubDiagonals, unsigned int SupDiagonals>
-class BandedMatrix : public Matrix<T, Par> {};
+template <typename T, const unsigned int SubDiagonals, const unsigned int SupDiagonals,
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+class BandedMatrix : public Matrix<T, RowMajor, Par> {};
 
 /**
  * A wrapper for a stream of data representing a diagonal matrix. This is
@@ -547,8 +551,8 @@ class BandedMatrix : public Matrix<T, Par> {};
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
  */
-template <typename T, unsigned int Par>
-using DiagonalMatrix = BandedMatrix<T, Par, 0, 0>;
+template <typename T, unsigned const int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+using DiagonalMatrix = BandedMatrix<T, 0, 0, Par>;
 
 /**
  * A wrapper for a stream of data representing a triangular matrix.
@@ -556,14 +560,15 @@ using DiagonalMatrix = BandedMatrix<T, Par, 0, 0>;
  *
  * @tparam T The type of the elements in the matrix. Supports any type with
  * defined arithmetic ops.
- * @tparam Par Number of elements retrieved in one read operation. Must be a
- * power of 2.
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
  * @tparam UpLo Whether the matrix is upper or lower triangular.
+ * @tparam Par Number of elements retrieved in one read operation. Must be a
+ * power of 2.
  */
-template <typename T, unsigned int Par, MajorOrder Order = RowMajor, UpperLower UpLo = Upper>
-class TriangularMatrix : public Matrix<T, Par, Order> {};
+template <typename T, const MajorOrder Order = RowMajor, const UpperLower UpLo = Upper,
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+class TriangularMatrix : public Matrix<T, Order, Par> {};
 
 /**
  * A wrapper for a stream of data representing a triangular banded matrix.
@@ -571,14 +576,15 @@ class TriangularMatrix : public Matrix<T, Par, Order> {};
  *
  * @tparam T The type of the elements in the matrix. Supports any type with
  * defined arithmetic ops.
- * @tparam Par Number of elements retrieved in one read operation. Must be a
- * power of 2.
  * @tparam Diagonals The number of subdiagonals in the matrix.
  * @tparam UpLo Whether the matrix is upper or lower triangular.
+ * @tparam Par Number of elements retrieved in one read operation. Must be a
+ * power of 2.
  */
-template <typename T, unsigned int Par, unsigned int Diagonals, UpperLower UpLo = Upper>
-class TriangularBandedMatrix : public BandedMatrix<T, Par, (UpLo == Upper) ? 0 : Diagonals,
-                                                   (UpLo == Lower) ? 0 : Diagonals> {};
+template <typename T, const unsigned int Diagonals,
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T), const UpperLower UpLo = Upper>
+class TriangularBandedMatrix : public BandedMatrix<T, (UpLo == Upper) ? 0 : Diagonals,
+                                                   (UpLo == Lower) ? 0 : Diagonals, Par> {};
 
 // TODO: Add support for unit triangular matrices and their banded equivalents
 
@@ -588,28 +594,30 @@ class TriangularBandedMatrix : public BandedMatrix<T, Par, (UpLo == Upper) ? 0 :
  *
  * @tparam T The type of the elements in the matrix. Supports any type with
  * defined arithmetic ops.
- * @tparam Par Number of elements retrieved in one read operation. Must be a
- * power of 2.
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
  * @tparam UpLo Whether the matrix is upper or lower triangular.
+ * @tparam Par Number of elements retrieved in one read operation. Must be a
+ * power of 2.
  */
-template <typename T, unsigned int Par, MajorOrder Order = RowMajor, UpperLower UpLo = Upper>
-class SymmetricMatrix : public Matrix<T, Par, Order> {};
+template <typename T, const MajorOrder Order = RowMajor, const UpperLower UpLo = Upper,
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+class SymmetricMatrix : public Matrix<T, Order, Par> {};
 
 /**
  * A wrapper for a stream of data representing a symmetric banded matrix.
  *
  * @tparam T The type of the elements in the matrix. Supports any type with
  * defined arithmetic ops.
- * @tparam Par Number of elements retrieved in one read operation. Must be a
- * power of 2.
  * @tparam Diagonals The number of superdiagonals/subdiagonals in the matrix
  * (they are equal).
  * @tparam UpLo Whether the matrix is upper or lower triangular.
+ * @tparam Par Number of elements retrieved in one read operation. Must be a
+ * power of 2.
  */
-template <typename T, unsigned int Par, unsigned int Diagonals, UpperLower UpLo = Upper>
-class SymmetricBandedMatrix : public BandedMatrix<T, Par, Diagonals, Diagonals> {};
+template <typename T, const unsigned int Diagonals, const UpperLower UpLo = Upper,
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+class SymmetricBandedMatrix : public BandedMatrix<T, Diagonals, Diagonals, Par> {};
 
 /**
  * A wrapper for a stream of data representing a Hermitian matrix.
@@ -619,13 +627,14 @@ class SymmetricBandedMatrix : public BandedMatrix<T, Par, Diagonals, Diagonals> 
  *
  * @tparam T The type of the elements in the matrix. Supports any type with
  * defined arithmetic ops.
- * @tparam Par Number of elements retrieved in one read operation. Must be a
- * power of 2.
  * @tparam Order The major order of the matrix. Can be either RowMajor or
  * ColMajor.
+ * @tparam Par Number of elements retrieved in one read operation. Must be a
+ * power of 2.
  */
-template <typename T, unsigned int Par, MajorOrder Order = RowMajor, UpperLower UpLo = Upper>
-class HermitianMatrix : public Matrix<T, Par, Order> {};
+template <typename T, const MajorOrder Order = RowMajor, const UpperLower UpLo = Upper,
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+class HermitianMatrix : public Matrix<T, Order, Par> {};
 
 /**
  * A wrapper for a stream of data representing a Hermitian banded matrix.
@@ -634,28 +643,29 @@ class HermitianMatrix : public Matrix<T, Par, Order> {};
  *
  * @tparam T The type of the elements in the matrix. Supports any type with
  * defined arithmetic ops.
- * @tparam Par Number of elements retrieved in one read operation. Must be a
- * power of 2.
  * @tparam Diagonals The number of superdiagonals/subdiagonals in the matrix
  * (they are equal).
  * @tparam UpLo Whether the matrix is upper or lower triangular.
+ * @tparam Par Number of elements retrieved in one read operation. Must be a
+ * power of 2.
  */
-template <typename T, unsigned int Par, unsigned int Diagonals, UpperLower UpLo = Upper>
-class HermitianBandedMatrix : public BandedMatrix<T, Par, Diagonals, Diagonals> {};
+template <typename T, const unsigned int Diagonals, const UpperLower UpLo = Upper,
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+class HermitianBandedMatrix : public BandedMatrix<T, Diagonals, Diagonals, Par> {};
 
 /**
  * Transposes a column-major matrix into a row-major matrix.
  * Doesn't move any values, just changes the type. This is analogous to the TRANSPOSE flag used in
  * the BLAS standard.
- * 
+ *
  * @tparam T The type of the elements in the matrix. Supports any type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a power of 2.
- * 
+ *
  * @param A The column-major matrix to read from
  * @param AT The row-major matrix to write to
  */
-template <typename T, const unsigned int Par>
-void transpose(Matrix<T, Par, ColMajor> &A, Matrix<T, Par, RowMajor> &AT) {
+template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+void transpose(Matrix<T, ColMajor, Par> &A, Matrix<T, RowMajor, Par> &AT) {
 #ifndef __SYNTHESIS__
   assert(("Dimensions of A and AT must match", A.rows() == AT.cols() && A.cols() == AT.rows()));
 #endif
@@ -669,15 +679,15 @@ void transpose(Matrix<T, Par, ColMajor> &A, Matrix<T, Par, RowMajor> &AT) {
 /**
  * Transposes a row-major matrix into a column-major matrix.
  * Doesn't move any values, just changes the type. This is analogous to the TRANSPOSE flag used in
- * 
+ *
  * @tparam T The type of the elements in the matrix. Supports any type with defined arithmetic ops.
  * @tparam Par Number of elements retrieved in one read operation. Must be a power of 2.
- * 
+ *
  * @param A The row-major matrix to read from
  * @param AT The column-major matrix to write to
  */
-template <typename T, const unsigned int Par>
-void transpose(Matrix<T, Par, RowMajor> &A, Matrix<T, Par, ColMajor> &AT) {
+template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+void transpose(Matrix<T, RowMajor, Par> &A, Matrix<T, ColMajor, Par> &AT) {
 #ifndef __SYNTHESIS__
   assert(("Dimensions of A and AT must match", A.rows() == AT.cols() && A.cols() == AT.rows()));
 #endif

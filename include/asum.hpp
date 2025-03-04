@@ -36,7 +36,7 @@ namespace blas {
  * @param[in]  x The input vector to compute the sum of magnitudes of.
  * @param[out] result The output value to write to.
  */
-template <typename T, const unsigned int Par>
+template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void asum(unsigned int n, Vector<T, Par> &x, T &result) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__

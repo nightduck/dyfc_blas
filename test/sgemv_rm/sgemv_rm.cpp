@@ -17,21 +17,17 @@
 #include "blas.hpp"
 
 void sgemv_rm(float alpha, float A[dimM][dimN], float x[dimN], float beta, float y[dimM], float r[dimM]) {
-  // Suggested parallelism level: 4096 / 8 / sizeof(type)
-  // EG: 64 for doubles, 128 for floats, 32 for double precision complex
-  const int Par = 4096 / 8 / sizeof(float);
-
 #pragma HLS DATAFLOW
 
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
   // constructor
-  dyfc::blas::Vector<float, Par> x_v(x, dimN);
-  dyfc::blas::Vector<float, Par> y_v(y, dimM);
-  dyfc::blas::Matrix<float, Par> A_m(FLATTEN_MATRIX(A), dimM, dimN);
-  dyfc::blas::Vector<float, Par> r_v(dimM);
+  dyfc::blas::Vector<float> x_v(x, dimN);
+  dyfc::blas::Vector<float> y_v(y, dimM);
+  dyfc::blas::Matrix<float> A_m(FLATTEN_MATRIX(A), dimM, dimN);
+  dyfc::blas::Vector<float> r_v(dimM);
 
   // Call a templated version of the blas function being tested
-  dyfc::blas::mv<float, Par, dyfc::blas::RowMajor>(dimM, dimN, alpha, A_m, x_v, beta, y_v, r_v);
+  dyfc::blas::mv<float, dyfc::blas::RowMajor>(dimM, dimN, alpha, A_m, x_v, beta, y_v, r_v);
 
   // Write the result back to the output array
   r_v.write(r);
