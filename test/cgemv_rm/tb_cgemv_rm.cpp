@@ -20,9 +20,9 @@
 #include "blas.hpp"
 #include "cgemv_rm.hpp"
 
-#define COMPLEX_RANDOM                                               \
-  ComplexFloat((double)(rand() % 100) / (double)(rand() % 100 + 1), \
-                (double)(rand() % 100) / (double)(rand() % 100 + 1))
+#define COMPLEX_RANDOM                                                   \
+  ComplexFloat((double)(rand() % 100 - 50) / (double)(rand() % 100 + 1), \
+               (double)(rand() % 100 - 50) / (double)(rand() % 100 + 1))
 
 bool approximatelyEqual(ComplexFloat a, ComplexFloat b, double epsilon) {
   bool real_close;

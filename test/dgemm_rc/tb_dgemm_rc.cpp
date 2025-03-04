@@ -20,7 +20,7 @@
 #include "blas.hpp"
 #include "dgemm_rc.hpp"
 
-#define RANDOM (double)(rand() % 100) / (double)(rand() % 100 + 1)
+#define RANDOM (double)(rand() % 100 - 50) / (double)(rand() % 100 + 1)
 
 bool approximatelyEqual(double a, double b, double epsilon) {
   if (a > b) {

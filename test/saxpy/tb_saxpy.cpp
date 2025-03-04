@@ -20,7 +20,7 @@
 #include "blas.hpp"
 #include "saxpy.hpp"
 
-#define RANDOM (float)(rand() % 100) / (float)(rand() % 100 + 1)
+#define RANDOM (float)(rand() % 100 - 50) / (float)(rand() % 100 + 1)
 
 bool approximatelyEqual(float a, float b, float epsilon) {
   if (a > b) {

@@ -20,9 +20,9 @@
 #include "blas.hpp"
 #include "zaxpy.hpp"
 
-#define COMPLEX_RANDOM                                               \
-  ComplexDouble((double)(rand() % 100) / (double)(rand() % 100 + 1), \
-                (double)(rand() % 100) / (double)(rand() % 100 + 1))
+#define COMPLEX_RANDOM                                                    \
+  ComplexDouble((double)(rand() % 100 - 50) / (double)(rand() % 100 + 1), \
+                (double)(rand() % 100 - 50) / (double)(rand() % 100 + 1))
 
 bool approximatelyEqual(ComplexDouble a, ComplexDouble b, double epsilon) {
   bool real_close;

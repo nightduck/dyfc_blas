@@ -20,9 +20,9 @@
 #include "blas.hpp"
 #include "caxpy.hpp"
 
-#define COMPLEX_RANDOM                                            \
-  ComplexFloat((float)(rand() % 100) / (float)(rand() % 100 + 1), \
-               (float)(rand() % 100) / (float)(rand() % 100 + 1))
+#define COMPLEX_RANDOM                                                 \
+  ComplexFloat((float)(rand() % 100 - 50) / (float)(rand() % 100 + 1), \
+               (float)(rand() % 100 - 50) / (float)(rand() % 100 + 1))
 
 bool approximatelyEqual(ComplexFloat a, ComplexFloat b, double epsilon) {
   bool real_close;

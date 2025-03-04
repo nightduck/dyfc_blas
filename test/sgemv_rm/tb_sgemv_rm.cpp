@@ -20,7 +20,7 @@
 #include "blas.hpp"
 #include "sgemv_rm.hpp"
 
-#define RANDOM (float)(rand() % 100) / (float)(rand() % 100 + 1)
+#define RANDOM (float)(rand() % 100 - 50) / (float)(rand() % 100 + 1)
 
 bool approximatelyEqual(float a, float b, double epsilon) {
   if (a > b) {
