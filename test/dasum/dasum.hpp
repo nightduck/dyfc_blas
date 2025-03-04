@@ -19,6 +19,10 @@
 #define dimN 8192
 #endif
 
+// These are reference numbers for the benchmark, commenting them out will have no effect
+#define dimNSweepMin 1024
+#define dimNSweepMax 32768
+
 void dasum(double x[dimN], double &r);
 
 #endif  // DYFC_BLAS_TEST_DASUM_HPP

@@ -19,6 +19,10 @@
 #define dimN 8192
 #endif
 
+// These are reference numbers for the benchmark, commenting them out will have no effect
+#define dimNSweepMin 4096
+#define dimNSweepMax 67108864
+
 void saxpy(float alpha, float x[dimN], float y[dimN], float r[dimN]);
 
 #endif  // DYFC_BLAS_TEST_SAXPY_HPP

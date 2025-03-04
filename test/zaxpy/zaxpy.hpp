@@ -21,6 +21,10 @@
 #define dimN 8192
 #endif
 
+// These are reference numbers for the benchmark, commenting them out will have no effect
+#define dimNSweepMin 1024
+#define dimNSweepMax 67108864
+
 using ComplexDouble = dyfc::blas::Complex<double>;
 
 void zaxpy(ComplexDouble alpha, ComplexDouble x[dimN], ComplexDouble y[dimN],

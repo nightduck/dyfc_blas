@@ -24,6 +24,12 @@
 #define dimM 512
 #endif
 
+// These are reference numbers for the benchmark, commenting them out will have no effect
+#define dimNSweepMin 64
+#define dimNSweepMax 4096
+#define dimMSweepMin 64
+#define dimMSweepMax 4096
+
 using ComplexFloat = dyfc::blas::Complex<float>;
 
 void cgemv_rm(ComplexFloat alpha, ComplexFloat A[dimM][dimN], ComplexFloat x[dimN],

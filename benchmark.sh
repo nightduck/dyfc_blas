@@ -35,7 +35,6 @@ fi
 
 # Create benchmarks directory if it doesn't exist, and clear it if it does
 mkdir -p "$TEST_DIR"/../benchmarks
-rm -r "$TEST_DIR"/../benchmarks/*
 
 # Iterate over all the tests in the test directory
 TEST_ARRAY=($TEST_LIST)
@@ -83,6 +82,9 @@ for i in "${!TEST_ARRAY[@]}"; do
       K_MIN=$K_MAX
     fi
 
+    # Create csv file to store the results
+    echo "M,N,K,Latency (cycles),Latency (ns),BRAM,DSP,FF,LUT,URAM" > "$TEST_DIR"/../benchmarks/"$TEST_NAME".csv
+
     M=$M_MIN
     while [ "$M" -le "$M_MAX" ]; do
       N=$N_MIN
@@ -90,6 +92,14 @@ for i in "${!TEST_ARRAY[@]}"; do
       K=$K_MIN
       while [ "$K" -le "$K_MAX" ]; do
         echo "$TEST_NAME: M=$M, N=$N, K=$K"
+
+        # Clean up hls_config.cfg in case a prior run of this script was interrupted
+        if tail -n 1 "$CONFIG_FILE" | grep -q "syn.cflags=-D dimK"; then
+          sed -i '$d' "$CONFIG_FILE"
+        fi
+        if tail -n 1 "$CONFIG_FILE" | grep -q "tb.cflags=-D dimK"; then
+          sed -i '$d' "$CONFIG_FILE"
+        fi
 
         # Edit hls_config.cfg with the current m,n,k values in the format
         echo "tb.cflags=-D dimK=$K -D dimM=$M -D dimN=$N" >> "$CONFIG_FILE"
@@ -100,13 +110,12 @@ for i in "${!TEST_ARRAY[@]}"; do
         
         # Check if the command was successful
         if [ $? -ne 0 ]; then
-          echo "  !! Test failed"
+          echo "  !! $TEST_NAME failed"
         fi
         
         # Extract the relevant information from csynth.rpt
         CSYNTH_RPT="$TEST/build/hls/syn/report/csynth.rpt"
         if [ -f "$CSYNTH_RPT" ]; then
-
           read latency_cycles latency_ns bram dsp ff lut uram issue_type < <(awk '
           BEGIN {
             hyphen_rows = 0;
@@ -115,6 +124,11 @@ for i in "${!TEST_ARRAY[@]}"; do
           {
             if ($0 ~ /\+-+\+/) {
               hyphen_rows++;
+              if (reading_table == 1) {
+                reading_table = 0;
+                print latency_cycles, latency_ns, bram[1], dsp[1], ff[1], lut[1], uram[1], "";
+                exit;
+              }
             }
             if (hyphen_rows == 2 && reading_table == 0) {
               reading_table = 1;
@@ -127,13 +141,8 @@ for i in "${!TEST_ARRAY[@]}"; do
               split(columns[13], ff, " ");
               split(columns[14], lut, " ");
               split(columns[15], uram, " ");
-              print latency_cycles, latency_ns, bram[1], dsp[1], ff[1], lut[1], uram[1], "";
             }
             if (hyphen_rows == 2 && reading_table == 1) {
-              if ($0 ~ /\+-+\+/) {
-                reading_table = 0;
-                exit;
-              }
               split($0, columns, "|");
               issue_type = columns[3];
               if (issue_type ~ /II/) {
@@ -157,10 +166,11 @@ for i in "${!TEST_ARRAY[@]}"; do
             echo "  URAM: $uram"
           fi
 
+          # Write the extracted values to the benchmark file
           if ([ -z "$issue_type" ]); then
-            echo "$M,$N,$K,$latency_cycles,$latency_ns,$bram,$dsp,$ff,$lut,$uram" >> "$TEST_DIR"/../benchmarks/"$TEST"_benchmark.csv
+            echo "$M,$N,$K,$latency_cycles,$latency_ns,$bram,$dsp,$ff,$lut,$uram" >> "$TEST_DIR"/../benchmarks/"$TEST_NAME".csv
           else
-            echo "$M,$N,$K,$issue_type" >> "$TEST_DIR"/../benchmarks/"$TEST"_benchmark.csv
+            echo "$M,$N,$K,$issue_type" >> "$TEST_DIR"/../benchmarks/"$TEST_NAME".csv
           fi
         else
           echo "!! csynth.rpt not found for $TEST_NAME."
@@ -174,7 +184,6 @@ for i in "${!TEST_ARRAY[@]}"; do
           sed -i '$d' "$CONFIG_FILE"
         fi
 
-        sleep 1
         # Increment K
         K=$((K * 2))
       done

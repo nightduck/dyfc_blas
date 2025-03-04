@@ -42,6 +42,7 @@ int main(int argc, char** argv) {
   srand(0xDEADBEEF);
   for (int i = 0; i < dimN; i++) {
     x[i] = RANDOM;
+    y[i] = RANDOM;
   }
 
   // Compute the correct result to compare against (this fictitious function is an element-wise
@@ -65,8 +66,8 @@ int main(int argc, char** argv) {
 
   if (failed_index > -1) {
     std::cout << "FAILED TEST" << std::endl;
-    std::cout << "r[" << failed_index << "] (" << r << ") != "
-              << "r_gold[" << failed_index << "] (" << r_gold << ")" << std::endl;
+    std::cout << "r (" << r << ") != "
+              << "r_gold (" << r_gold << ")" << std::endl;
     return -1;
   } else {
     std::cout << "PASSED TEST" << std::endl;

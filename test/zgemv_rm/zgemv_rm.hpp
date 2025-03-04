@@ -24,6 +24,12 @@
 #define dimM 512
 #endif
 
+// These are reference numbers for the benchmark, commenting them out will have no effect
+#define dimNSweepMin 32
+#define dimNSweepMax 4096
+#define dimMSweepMin 32
+#define dimMSweepMax 4096
+
 using ComplexDouble = dyfc::blas::Complex<double>;
 
 void zgemv_rm(ComplexDouble alpha, ComplexDouble A[dimM][dimN], ComplexDouble x[dimN],

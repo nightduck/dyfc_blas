@@ -25,6 +25,14 @@
 #define dimK 192
 #endif
 
+// These are reference numbers for the benchmark, commenting them out will have no effect
+#define dimNSweepMin 64
+#define dimNSweepMax 2048
+#define dimMSweepMin 64
+#define dimMSweepMax 2048
+#define dimKSweepMin 64
+#define dimKSweepMax 2048
+
 void dgemm_rc(double alpha, double A[dimM][dimK], double B[dimN][dimK], double beta, double C[dimM][dimN], double r[dimM][dimN]);
 
 #endif  // DYFC_BLAS_TEST_DGEMM_RC_HPP

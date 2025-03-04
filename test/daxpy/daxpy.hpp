@@ -19,6 +19,10 @@
 #define dimN 8192
 #endif
 
+// These are reference numbers for the benchmark, commenting them out will have no effect
+#define dimNSweepMin 2048
+#define dimNSweepMax 67108864
+
 void daxpy(double alpha, double x[dimN], double y[dimN], double r[dimN]);
 
 #endif  // DYFC_BLAS_TEST_DAXPY_HPP

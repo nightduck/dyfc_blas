@@ -22,6 +22,12 @@
 #define dimM 512
 #endif
 
+// These are reference numbers for the benchmark, commenting them out will have no effect
+#define dimNSweepMin 128
+#define dimNSweepMax 4096
+#define dimMSweepMin 128
+#define dimMSweepMax 4096
+
 void sgemv_cm(float alpha, float A[dimN][dimM], float x[dimN], float beta, float y[dimN], float r[dimN]);
 
 #endif  // DYFC_BLAS_TEST_SGEMV_CM_HPP

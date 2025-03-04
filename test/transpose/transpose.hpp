@@ -22,6 +22,12 @@
 #define dimM 512
 #endif
 
+// These are reference numbers for the benchmark, commenting them out will have no effect
+#define dimNSweepMin 128
+#define dimNSweepMax 4096
+#define dimMSweepMin 128
+#define dimMSweepMax 4096
+
 void transpose_krnl(double A[dimN][dimM], double ArTc[dimN][dimM], double ArTr[dimM][dimN],
                double AcTr[dimN][dimM], double AcTc[dimM][dimN]);
 

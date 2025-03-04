@@ -21,7 +21,7 @@
 #define dimN 8192
 #endif
 
-// These are reference numbers for the benchmark
+// These are reference numbers for the benchmark, commenting them out will have no effect
 #define dimNSweepMin 2048
 #define dimNSweepMax 67108864
 

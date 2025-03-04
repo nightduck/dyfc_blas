@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Usage: ./test.sh [test1] [test2] ...
+
 # Directory containing the tests
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/test" && pwd)"
 
