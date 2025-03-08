@@ -41,92 +41,96 @@ namespace blas {
  * @param[in]  x The input vector to multiply.
  * @param[out] result The output vector to write to.
  */
-template <typename T, const MajorOrder Order = RowMajor, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
-void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Par> &A, Vector<T, Par> &x,
-        Vector<T, Par> &result) {
+template <typename T, const MajorOrder Order = RowMajor,
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Par> &A,
+        Vector<T, Par> &x, Vector<T, Par> &result) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
   assert((m % Par) == 0);
-  assert(A.cols() == n);
-  assert(A.rows() == m);
-  assert(x.shape() == n);
-  assert(result.shape() == m);
-
+  assert(n == A.cols());
+  assert(m == A.rows());
+  assert(n == x.length());
+  assert(m == result.length());
+  assert(("This matrix is a pure stream and only accepts one reader", A.read_lock()));
+  assert(("This vector is a pure stream and only accepts one reader", x.read_lock()));
+  assert(("This vector only accepts one writer", result.write_lock()));
 #endif
+  typename Matrix<T, Order, Par>::StreamType A_stream;
+  typename Vector<T, Par>::StreamType x_stream;
+  A.read(A_stream);
   if (Order == RowMajor) {
-  T r = 0;
-  WideType<T, Par> r_out;
-  hls::stream<WideType<T, Par>> ringbuf_x;
-LOOP_gemv_rm:
-  for (int i = 0; i < m; i++) {
-    for (int j = 0; j < n; j += Par) {
+    x.read(x_stream, 1, A.rows());
+    T r = 0;
+    WideType<T, Par> r_out;
+  LOOP_gemv_rm:
+    for (int i = 0; i < m; i++) {
+      for (int j = 0; j < n; j += Par) {
 #pragma HLS LOOP_FLATTEN
 #pragma HLS PIPELINE
-      WideType<T, Par> m_val = A.read();
-      WideType<T, Par> v_val;
-      WideType<T, Par> r_val = T(0);
-      WideType<T, Par> rsum_val = T(0);
-      if (i > 0) {
-        v_val = ringbuf_x.read();
-      } else {
-        v_val = x.read();
-      }
-      if (i < m - 1) {
-        ringbuf_x.write(v_val);
-      }
-    LOOP_multiply_elements:
-      for (int k = 0; k < Par; k++) {
+        WideType<T, Par> m_val = A_stream.read();
+        WideType<T, Par> v_val = x_stream.read();
+        WideType<T, Par> r_val = T(0);
+        WideType<T, Par> rsum_val = T(0);
+      LOOP_multiply_elements:
+        for (int k = 0; k < Par; k++) {
 #pragma HLS UNROLL
-        r_val[k] = alpha * m_val[k] * v_val[k];
-      }
-      prefixsum<T, Par>(r_val, rsum_val, r);
-      r = rsum_val[Par - 1];
-      if (j + Par >= n) {
-        r_out[i % Par] = r;
-        if (i % Par == Par - 1) {
-          result.write(r_out);
+          r_val[k] = alpha * m_val[k] * v_val[k];
         }
-        r = T(0);
+        prefixsum<T, Par>(r_val, rsum_val, r);
+        r = rsum_val[Par - 1];
+        if (j + Par >= n) {
+          r_out[i % Par] = r;
+          if (i % Par == Par - 1) {
+            result.write(r_out);
+          }
+          r = T(0);
+        }
       }
     }
-  }
-  } else if (Order == ColMajor) {    
-    WideType<T, Par> ring_buffer[m/Par];
+  } else if (Order == ColMajor) {
+    x.read(x_stream);
+    WideType<T, Par> ring_buffer[m / Par];
     WideType<T, Par> v_val = T(0);
 
-LOOP_gemv_cm:
+  LOOP_gemv_cm:
     for (size_t i = 0; i < n; i++) {
-      for (size_t j = 0; j < m; j+=Par) {
-        WideType<T, Par> m_val = A.read();
+      for (size_t j = 0; j < m; j += Par) {
+        WideType<T, Par> m_val = A_stream.read();
         WideType<T, Par> r_val;
         WideType<T, Par> rr_val = T(0);  // Running sum of these rows
         if (i > 0) {
           // rr_val = ring_buffer.read();
-          rr_val = ring_buffer[j/Par];
+          rr_val = ring_buffer[j / Par];
         }
         if (j == 0 && i % Par == 0) {
-          v_val = x.read();
+          v_val = x_stream.read();
         }
         for (int k = 0; k < Par; k++) {
-  #pragma HLS UNROLL
+#pragma HLS UNROLL
           r_val[k] = alpha * m_val[k] * v_val[i % Par] + rr_val[k];
         }
-        if (i < n-1) {
+        if (i < n - 1) {
           // ring_buffer.write(r_val);
-          ring_buffer[j/Par] = r_val;
+          ring_buffer[j / Par] = r_val;
         } else {
           result.write(r_val);
         }
       }
     }
   } else {
-    // There shouldn't be any other option
-    #ifndef __SYNTHESIS__
-      assert(("Invalid MajorOrder option (this shouldn't be possible, wtf did you do?)", false));
-    #endif
+// There shouldn't be any other option
+#ifndef __SYNTHESIS__
+    assert(("Invalid MajorOrder option (this shouldn't be possible, wtf did you do?)", false));
+#endif
   }
-  return;
+
+#ifndef __SYNTHESIS__
+  assert(("Matrix A isn't empty", A.empty()));
+  assert(("Vector x isn't empty", x.empty()));
+  assert(("Vector result is empty", !result.empty()));
+#endif
 }
 // TODO: Subtemplate for trmv, tbmv, tpmv
 // TODO: Specific implementations for the standard: strmv, dtrmv, ctrmv, ztrmv,
@@ -153,31 +157,31 @@ LOOP_gemv_cm:
  * @param[in]  y The input vector to add to the result.
  * @param[out] result The output vector to write to.
  */
-template <typename T, const MajorOrder Order = RowMajor, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
-void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Par> &A, Vector<T, Par> &x,
-        T beta, Vector<T, Par> &y, Vector<T, Par> &result) {
+template <typename T, const MajorOrder Order = RowMajor,
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Par> &A,
+        Vector<T, Par> &x, T beta, Vector<T, Par> &y, Vector<T, Par> &result) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
   assert((m % Par) == 0);
-  assert(A.cols() == n);
-  assert(A.rows() == m);
-  assert(x.shape() == n);
-  assert(y.shape() == m);
-  assert(result.shape() == m);
+  assert(n == A.cols());
+  assert(m == A.rows());
+  assert(n == x.length());
+  assert(m == y.length());
+  assert(m == result.length());
 #endif
   Vector<T, Par> Ax(m);
   mv(m, n, alpha, A, x, Ax);
   axpy(m, beta, y, Ax, result);
 
-
-  #ifndef __SYNTHESIS__
-    assert(("Matrix isn't empty", A.size() == 0));
-    assert(("Vector x isn't empty", x.size() == 0));
-    assert(("Vector y isn't empty", y.size() == 0));
-    assert(("Intermediary vector Ax isn't empty", Ax.size() == 0));
-  #endif
-  return;
+#ifndef __SYNTHESIS__
+  assert(("Matrix A isn't empty", A.empty()));
+  assert(("Vector x isn't empty", x.empty()));
+  assert(("Vector y isn't empty", y.empty()));
+  assert(("Intermediary vector Ax isn't empty", Ax.empty()));
+  assert(("Vector result is empty", !result.empty()));
+#endif
 }
 // TODO: Subtemplates for gemv, hemv, symv, gbmv, hbmv, sbmv, hpmv, spmv
 // TODO: Specific implementations for the standard: cgemv, dgemv, sgemv, zgemv,

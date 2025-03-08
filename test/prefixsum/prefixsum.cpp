@@ -29,7 +29,7 @@ void prefixsum(double x[dimN], double r[dimN]) {
   dyfc::blas::prefixsum<double>(dimN, x_v, r_v);
 
   // Write the result back to the output array
-  r_v.write(r);
+  r_v.to_memory(r);
 
   return;
 }

@@ -42,7 +42,15 @@ void dot(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &y, T &result) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
+  assert(n == x.length());
+  assert(n == y.length());
+  assert(("This vector is a pure stream and only accepts one reader", x.read_lock()));
+  assert(("This vector is a pure stream and only accepts one reader", y.read_lock()));
 #endif
+  typename Vector<T, Par>::StreamType x_stream;
+  typename Vector<T, Par>::StreamType y_stream;
+  x.read(x_stream);
+  y.read(y_stream);
   WideType<T, Par> x_val;
   WideType<T, Par> y_val;
   WideType<T, Par> xy_val;
@@ -50,8 +58,8 @@ void dot(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &y, T &result) {
   result = 0;
   for (unsigned int i = 0; i < n; i += Par) {
 #pragma HLS PIPELINE
-    x_val = x.read();
-    y_val = y.read();
+    x_val = x_stream.read();
+    y_val = y_stream.read();
     xy_val = 0;
     for (unsigned int j = 0; j < Par; j++) {
 #pragma HLS UNROLL
@@ -60,6 +68,10 @@ void dot(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &y, T &result) {
     prefixsum<T, Par>(xy_val, r_val, result);
     result = r_val[Par - 1];
   }
+#ifndef __SYNTHESIS__
+  assert(("Vector x isn't empty", x.empty()));
+  assert(("Vector y isn't empty", y.empty()));
+#endif
 }
 
 }  // namespace blas

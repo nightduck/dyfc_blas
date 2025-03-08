@@ -61,6 +61,9 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Order
   assert(B.cols() == n);
   assert(result.rows() == m);
   assert(result.cols() == n);
+  assert(("This matrix is a pure stream and only accepts one reader", A.read_lock()));
+  assert(("This matrix is a pure stream and only accepts one reader", B.read_lock()));
+  assert(("This matrix only accepts one writer", result.write_lock()));
 #endif
 
   if (OrderA == RowMajor && OrderB == ColMajor) {
@@ -136,6 +139,11 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Order
     assert(("Invalid MajorOrder option (this shouldn't be possible, wtf did you do?)", false));
 #endif
   }
+#ifndef __SYNTHESIS__
+  assert(("Matrix isn't empty", A.empty()));
+  assert(("Matrix isn't empty", B.empty()));
+  assert(("Matrix is empty", !result.empty()));
+#endif
 }
 // TODO: Subtemplates for gemm, hemm, symm, trmm
 // TODO: Specific implementations for the standard: cgemm, dgemm, sgemm, zgemm,
@@ -205,6 +213,12 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Order
     assert(("gemm with two matching major order inputs hasn't been implemented yet", false));
 #endif
   }
+#ifndef __SYNTHESIS__
+  assert(("Matrix isn't empty", A.empty()));
+  assert(("Matrix isn't empty", B.empty()));
+  assert(("Matrix isn't empty", C.empty()));
+  assert(("Matrix is empty", !result.empty()));
+#endif
 }
 // TODO: Subtemplates for gemm, hemm, symm, gemmtr
 // TODO: Specific implementations for the standard: cgemm, dgemm, sgemm, zgemm,

@@ -32,7 +32,7 @@ void cgemv_rm(ComplexFloat alpha, ComplexFloat A[dimM][dimN], ComplexFloat x[dim
                                                            r_v);
 
   // Write the result back to the output array
-  r_v.write(r);
+  r_v.to_memory(r);
 
   return;
 }

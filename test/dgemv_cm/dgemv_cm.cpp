@@ -30,7 +30,7 @@ void dgemv_cm(double alpha, double A[dimN][dimM], double x[dimN], double beta, d
   dyfc::blas::mv<double, dyfc::blas::ColMajor>(dimM, dimN, alpha, A_m, x_v, beta, y_v, r_v);
 
   // Write the result back to the output array
-  r_v.write(r);
+  r_v.to_memory(r);
 
   return;
 }

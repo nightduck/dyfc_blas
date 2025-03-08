@@ -30,7 +30,7 @@ void sgemv_rm(float alpha, float A[dimM][dimN], float x[dimN], float beta, float
   dyfc::blas::mv<float, dyfc::blas::RowMajor>(dimM, dimN, alpha, A_m, x_v, beta, y_v, r_v);
 
   // Write the result back to the output array
-  r_v.write(r);
+  r_v.to_memory(r);
 
   return;
 }

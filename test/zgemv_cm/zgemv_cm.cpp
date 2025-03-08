@@ -32,7 +32,7 @@ void zgemv_cm(ComplexDouble alpha, ComplexDouble A[dimN][dimM], ComplexDouble x[
                                                            r_v);
 
   // Write the result back to the output array
-  r_v.write(r);
+  r_v.to_memory(r);
 
   return;
 }

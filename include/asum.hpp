@@ -41,13 +41,17 @@ void asum(unsigned int n, Vector<T, Par> &x, T &result) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
+  assert(n == x.length());
+  assert(("This vector is a pure stream and only accepts one reader", x.read_lock()));
 #endif
+  typename Vector<T, Par>::StreamType x_stream;
+  x.read(x_stream);
   WideType<T, Par> x_val;
   WideType<T, Par> r_val;
   result = 0;
   for (unsigned int i = 0; i < n; i += Par) {
 #pragma HLS PIPELINE
-    x_val = x.read();
+    x_val = x_stream.read();
     for (unsigned int j = 0; j < Par; j++) {
 #pragma HLS UNROLL
       x_val[j] = abs(x_val[j]);
@@ -55,6 +59,9 @@ void asum(unsigned int n, Vector<T, Par> &x, T &result) {
     prefixsum<T, Par>(x_val, r_val, result);
     result = r_val[Par - 1];
   }
+#ifndef __SYNTHESIS__
+  assert(("Vector x isn't empty", x.empty()));
+#endif
 }
 // TODO: Specific implementations for the standard: sasum, dasum scasum, dzasum
 

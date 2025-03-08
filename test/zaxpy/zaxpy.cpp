@@ -30,7 +30,7 @@ void zaxpy(ComplexDouble alpha, ComplexDouble x[dimN], ComplexDouble y[dimN],
   dyfc::blas::axpy<ComplexDouble>(dimN, alpha, x_v, y_v, r_v);
 
   // Write the result back to the output array
-  r_v.write(r);
+  r_v.to_memory(r);
 
   return;
 }
