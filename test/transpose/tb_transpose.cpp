@@ -23,7 +23,7 @@
 #define RANDOM (double)(rand() % 100 - 50) / (double)(rand() % 100 + 1)
 
 bool approximatelyEqual(double a, double b, double epsilon) {
-  return std::abs(a/b - 1) <= epsilon;
+  return (a == b) || std::abs(a/b - 1) <= epsilon;
 }
 
 void print_vector(double *v, int n) {

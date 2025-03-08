@@ -25,8 +25,8 @@
                (float)(rand() % 100 - 50) / (float)(rand() % 100 + 1))
 
 bool approximatelyEqual(ComplexFloat a, ComplexFloat b, double epsilon) {
-  bool real_close = std::abs(a.real/b.real - 1) <= epsilon;
-  bool imag_close = std::abs(a.imag/b.imag - 1) <= epsilon;
+  bool real_close = (a.real == b.real) || std::abs(a.real/b.real - 1) <= epsilon;
+  bool imag_close = (a.imag == b.imag) || std::abs(a.imag/b.imag - 1) <= epsilon;
 
   return real_close && imag_close;
 }
