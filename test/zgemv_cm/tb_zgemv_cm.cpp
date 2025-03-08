@@ -24,24 +24,9 @@
   ComplexDouble((double)(rand() % 100 - 50) / (double)(rand() % 100 + 1), \
                 (double)(rand() % 100 - 50) / (double)(rand() % 100 + 1))
 
-bool approximatelyEqual(ComplexDouble a, ComplexDouble b, double epsilon) {
-  bool real_close;
-  bool imag_close;
-  if (a.real > b.real) {
-    real_close = (a.real / b.real) - 1 <= epsilon;
-  } else if (a.real < b.real) {
-    real_close = (b.real / a.real) - 1 <= epsilon;
-  } else {
-    real_close = true;
-  }
-
-  if (a.imag > b.imag) {
-    imag_close = (a.imag / b.imag) - 1 <= epsilon;
-  } else if (a.imag < b.imag) {
-    imag_close = (b.imag / a.imag) - 1 <= epsilon;
-  } else {
-    imag_close = true;
-  }
+bool approximatelyEqual(ComplexFloat a, ComplexFloat b, double epsilon) {
+  bool real_close = std::abs(a.real/b.real - 1) <= epsilon;
+  bool imag_close = std::abs(a.imag/b.imag - 1) <= epsilon;
 
   return real_close && imag_close;
 }

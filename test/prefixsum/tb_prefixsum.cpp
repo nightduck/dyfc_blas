@@ -23,13 +23,7 @@
 #define RANDOM (double)(rand() % 100 - 50) / (double)(rand() % 100 + 1)
 
 bool approximatelyEqual(double a, double b, double epsilon) {
-  if (a > b) {
-    return (a / b) - 1 <= epsilon;
-  } else if (a < b) {
-    return (b / a) - 1 <= epsilon;
-  } else {
-    return true;
-  }
+  return std::abs(a/b - 1) <= epsilon;
 }
 
 int main(int argc, char** argv) {
