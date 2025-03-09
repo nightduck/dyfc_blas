@@ -203,15 +203,15 @@ void write(WideType<T, Par> value) {
  *
  * @return A WideType containing the next Par elements from the stream.
  */
-void read(StreamType& stream, int repeat_elements = 1, int repeat_vector = 1) {
-// TODO: Explore getting rid of repeat elements. It kind fucks up performance unless we can guarantee it's a power of 2
+void read(StreamType &stream, int repeat_elements = 1, int repeat_vector = 1) {
+// TODO: Explore getting rid of repeat elements. It kind fucks up performance unless we can
+// guarantee it's a power of 2
 #ifndef __SYNTHESIS__
   assert(("repeat_elements must be at least 1", repeat_elements > 0));
   assert(("repeat_vector must be at least 1", repeat_vector > 0));
 
   // TODO: For now only sequential reads are supported
-  assert(("repeat_elements is not supported yet, must be left default",
-         repeat_elements == 1));
+  assert(("repeat_elements is not supported yet, must be left default", repeat_elements == 1));
 #endif
   if (buffer_ == nullptr) {
     StreamType repeat_stream;
@@ -398,15 +398,14 @@ class Matrix {
       }
     }
   }
-
-  /**
-   * Creates a matrix and fills it with provided buffer. Internal stream is disabled
-   *
-   * @param buffer The array to fill the vector with. Memory is assumed to be arranaged in order
-   * matching Order specified in the class template
-   * @param Rows The number of rows in the matrix
-   * @param Cols The number of columns in the matrix
-   */
+/**
+ * Creates a matrix and fills it with provided buffer. Internal stream is disabled
+ *
+ * @param buffer The array to fill the vector with. Memory is assumed to be arranaged in order
+ * matching Order specified in the class template
+ * @param Rows The number of rows in the matrix
+ * @param Cols The number of columns in the matrix
+ */
 #ifndef __SYNTHESIS__
   Matrix(T *buffer, const unsigned int Rows, const unsigned int Cols)
       : stream_(), buffer_(buffer), rows_(Rows), cols_(Cols), num_readers_(0), num_writers_(1) {
@@ -507,57 +506,150 @@ class Matrix {
    *
    * @param Stream The stream to put read data into
    * @param tiled If true, the matrix is tiled into Par x Par blocks
-   * @param repeat_elements The number of times to repeat each element (or tile) into the provided
-   * stream
-   * @param repeat_row The number of times to repeat each row into the provided stream
-   * @param repeat_matrix The number of times to repeat the matrix into the provided stream
+   * @param repeat_elements If true, repeats each element Par times. Only supported with tiling
+   * @param repeat_row Number of times to repeat each row in a tile
+   * @param repeat_tile Number of times to repeat each tile
+   * @param repeat_tile_row Number of times to repeat each row of tiles
+   * @param repeat_matrix Number of times to repeat the entire matrix
    */
-  void read(StreamType &stream, bool tiled = false, int repeat_elements = 1, int repeat_row = 1,
-            int repeat_matrix = 1) {
+  void read(StreamType &stream, const bool tiled = true, const bool repeat_elements = false,
+            const int repeat_row = 1, const int repeat_tile = 1, const int repeat_tile_row = 1,
+            const int repeat_matrix = 1) {
 #ifndef __SYNTHESIS__
     assert(("repeat_elements must be at least 1", repeat_elements > 0));
     assert(("repeat_row must be at least 1", repeat_row > 0));
     assert(("repeat_matrix must be at least 1", repeat_matrix > 0));
-
-    // TODO: For now only sequential reads are supported
-    assert(("tiled is not supported yet", tiled == false));
-    assert(("repeat_elements is not supported yet, must be left default",
-           repeat_elements == 1));
-    assert(("repeat_row is not supported yet, must be left default", repeat_row == 1));
-    assert(("repeat_matrix is not supported yet, must be left default",
-           repeat_matrix == 1));
 #endif
     if (buffer_ == nullptr) {
       // TODO: Implement reordering from sequential stream. For now it ignores the parameters and
       // does a sequential read
 
+#ifndef __SYNTHESIS__
+      assert((
+          "Pure stream matrices only support sequential reads for now. repeat_elements must remain "
+          "default value",
+          repeat_elements == 1));
+      assert(
+          ("Pure stream matrices only support sequential reads for now. repeat_row must remain "
+           "default value",
+           repeat_row == 1));
+      assert(
+          ("Pure stream matrices only support sequential reads for now. tile_size must remain "
+           "default value",
+           tiled == false));
+      assert(
+          ("Pure stream matrices only support sequential reads for now. repeat_tile must remain "
+           "default value",
+           repeat_tile == 1));
+      assert((
+          "Pure stream matrices only support sequential reads for now. repeat_tile_row must remain "
+          "default value",
+          repeat_tile_row == 1));
+      assert(
+          ("Pure stream matrices only support sequential reads for now. repeat_matrix must remain "
+           "default value",
+           repeat_matrix == 1));
+#endif
+
       stream.write(stream_.read());
     } else {
-      // TODO: Implement read from buffer. for now it ignores the parameters and does a sequential
-      // read
-
+#ifndef __SYNTHESIS__
+      assert(("repeat_elements only supported with tiling", !repeat_elements || tiled));
+#endif
       if (Order == RowMajor) {
-        for (int i = 0; i < rows_; i++) {
-          for (int j = 0; j < cols_; j += Par) {
+        if (tiled) {
+          for (int i = 0; i < repeat_matrix; i++) {
+            for (int j = 0; j < rows_; j += Par) {
+              for (int k = 0; k < repeat_tile_row; k++) {
+                for (int l = 0; l < cols_; l += Par) {
+                  for (int m = 0; m < repeat_tile; m++) {
+                    for (int n = 0; n < Par; n++) {
+                      for (int o = 0; o < (repeat_elements) ? Par : 1; o++) {
 #pragma HLS PIPELINE
-            WideType<T, Par> value;
-            for (int k = 0; k < Par; k++) {
+                        WideType<T, Par> value;
+                        for (int p = 0; p < Par; p++) {
 #pragma HLS UNROLL
-              value[k] = buffer_[i * cols_ + j + k];
+                          if (repeat_elements) {
+                            value[p] = buffer_[(k + n) * cols_ + l + o];
+                          } else {
+                            value[p] = buffer_[(k + n) * cols_ + l + p];
+                          }
+                        }
+                        stream.write(value);
+                      }
+                    }
+                  }
+                }
+              }
             }
-            stream.write(value);
+          }
+        } else {  // Not tiled
+          for (int i = 0; i < repeat_matrix; i++) {
+            for (int j = 0; j < rows_; j++) {
+              for (int k = 0; k < repeat_row; k++) {
+                for (int l = 0; l < cols_; l += Par) {
+#pragma HLS PIPELINE
+                  WideType<T, Par> value;
+                  for (int m = 0; m < Par; m++) {
+#pragma HLS UNROLL
+                    if (repeat_elements) {
+                      value[m] = buffer_[j * cols_ + l + m];
+                    } else {
+                      value[m] = buffer_[j * cols_ + l + m];
+                    }
+                  }
+                  stream.write(value);
+                }
+              }
+            }
           }
         }
-      } else {
-        for (int i = 0; i < cols_; i++) {
-          for (int j = 0; j < rows_; j += Par) {
+      } else {  // Col Major Order
+        if (tiled) {
+          for (int i = 0; i < repeat_matrix; i++) {
+            for (int j = 0; j < cols_; j += Par) {
+              for (int k = 0; k < repeat_tile_row; k++) {
+                for (int l = 0; l < rows_; l += Par) {
+                  for (int m = 0; m < repeat_tile; m++) {
+                    for (int n = 0; n < Par; n++) {
+                      for (int o = 0; o < (repeat_elements) ? Par : 1; o++) {
 #pragma HLS PIPELINE
-            WideType<T, Par> value;
-            for (int k = 0; k < Par; k++) {
+                        WideType<T, Par> value;
+                        for (int p = 0; p < Par; p++) {
 #pragma HLS UNROLL
-              value[k] = buffer_[i * rows_ + j + k];
+                          if (repeat_elements) {
+                            value[p] = buffer_[(k + n) * rows_ + l + o];
+                          } else {
+                            value[p] = buffer_[(k + n) * rows_ + l + p];
+                          }
+                        }
+                        stream.write(value);
+                      }
+                    }
+                  }
+                }
+              }
             }
-            stream.write(value);
+          }
+        } else {  // Not tiled
+          for (int i = 0; i < repeat_matrix; i++) {
+            for (int j = 0; j < cols_; j++) {
+              for (int k = 0; k < repeat_row; k++) {
+                for (int l = 0; l < rows_; l += Par) {
+#pragma HLS PIPELINE
+                  WideType<T, Par> value;
+                  for (int m = 0; m < Par; m++) {
+#pragma HLS UNROLL
+                    if (repeat_elements) {
+                      value[m] = buffer_[j * rows_ + l + m];
+                    } else {
+                      value[m] = buffer_[j * rows_ + l + m];
+                    }
+                  }
+                  stream.write(value);
+                }
+              }
+            }
           }
         }
       }
