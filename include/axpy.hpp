@@ -94,8 +94,8 @@ void axpy(unsigned int n, unsigned int m, T alpha, Matrix<T, Order, Par> &x,
   typename Matrix<T, Order, Par>::StreamType y_stream;
   x.read(x_stream);
   y.read(y_stream);
-  for (unsigned int i = 0; i < n; i++) {
-    for (unsigned int j = 0; j < m; j += Par) {
+  for (unsigned int i = 0; i < m; i++) {
+    for (unsigned int j = 0; j < n; j += Par) {
 #pragma HLS PIPELINE
       WideType<T, Par> r_val = T(0);
       WideType<T, Par> x_val = x_stream.read();

@@ -22,6 +22,7 @@
 namespace dyfc {
 namespace blas {
 
+// TODO: Specify separate order for r. It shouldn't have to be inferred from A and B (neccesarily)
 /**
  * Performs matrix multiplication
  *
@@ -66,47 +67,30 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Order
   assert(("This matrix only accepts one writer", result.write_lock()));
 #endif
 
+  typename Matrix<T, OrderA, Par>::StreamType A_stream;
+  typename Matrix<T, OrderB, Par>::StreamType B_stream;
   if (OrderA == RowMajor && OrderB == ColMajor) {
-    T r = T(0);
-    WideType<T, Par> r_out;
-    hls::stream<WideType<T, Par>> A_row_stream;
-    hls::stream<WideType<T, Par>> B_repeat_stream;
-    for (int i = 0; i < m; i++) {
-      for (int j = 0; j < n; j++) {
-        for (int p = 0; p < k; p += Par) {
-          WideType<T, Par> A_val;
-          WideType<T, Par> B_val;
-          if (j % Par == 0) {
-            r_out = 0;
-          }
-          if (j == 0) {
-            A_val = A.read();
-            A_row_stream.write(A_val);
-          } else if (j == n - 1) {
-            A_val = A_row_stream.read();
-          } else {
-            A_val = A_row_stream.read();
-            A_row_stream.write(A_val);
-          }
-          if (i == 0) {
-            B_val = B.read();
-            B_repeat_stream.write(B_val);
-          } else if (i == m - 1) {
-            B_val = B_repeat_stream.read();
-          } else {
-            B_val = B_repeat_stream.read();
-            B_repeat_stream.write(B_val);
-          }
+#pragma HLS DATAFLOW
+    A.read(A_stream, false, false, B.cols(), 1, 1, 1);
+    B.read(B_stream, false, false, 1, 1, 1, A.rows());
 
+    T r(0);
+    WideType<T, Par> r_out;
+    for (size_t i = 0; i < m; i++) {
+      for (size_t j = 0; j < n; j++) {
+        for (size_t l = 0; l < k; l += Par) {
+#pragma HLS PIPELINE
+          WideType<T, Par> a = A_stream.read();
+          WideType<T, Par> b = B_stream.read();
           WideType<T, Par> r_val;
           WideType<T, Par> rsum_val = T(0);
-          for (int s = 0; s < Par; s++) {
+          for (size_t p = 0; p < Par; p++) {
 #pragma HLS UNROLL
-            r_val[s] = A_val[s] * B_val[s];
+            r_val[p] = a[p] * b[p];
           }
           prefixsum<T, Par>(r_val, rsum_val, r);
           r = rsum_val[Par - 1];
-          if (p + Par >= k) {
+          if (l + Par >= k) {
             r_out[j % Par] = r;
             if (j % Par == Par - 1) {
               result.write(r_out * alpha);
@@ -116,20 +100,15 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Order
         }
       }
     }
-#ifndef __SYNTHESIS__
-    assert(A.empty());
-    assert(B.empty());
-    assert(A_row_stream.empty());
-    assert(B_repeat_stream.empty());
-    assert(result.size() == m * n / Par);
-#endif
   } else if (OrderA == ColMajor && OrderB == RowMajor) {
-// There shouldn't be any other option
+#ifndef __SYNTHESIS__
+    assert(("gemm with two row major order inputs hasn't been implemented yet", false));
+#endif
+  } else if (OrderA == RowMajor && OrderB == RowMajor) {
 #ifndef __SYNTHESIS__
     assert(("gemm with two row major order inputs hasn't been implemented yet", false));
 #endif
   } else if (OrderA == ColMajor && OrderB == ColMajor) {
-// There shouldn't be any other option
 #ifndef __SYNTHESIS__
     assert(("gemm with two column major order inputs hasn't been implemented yet", false));
 #endif
@@ -140,9 +119,11 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Order
 #endif
   }
 #ifndef __SYNTHESIS__
-  assert(("Matrix isn't empty", A.empty()));
+  assert(("Matrix A isn't empty", A.empty()));
   assert(("Matrix isn't empty", B.empty()));
-  assert(("Matrix is empty", !result.empty()));
+  assert(("A_stream isn't empty", A_stream.empty()));
+  assert(("B_stream isn't empty", B_stream.empty()));
+  assert(("Matrix result is unexpected size", result.size() == m * n / Par));
 #endif
 }
 // TODO: Subtemplates for gemm, hemm, symm, trmm
