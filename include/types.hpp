@@ -194,6 +194,7 @@ void write(WideType<T, Par> value) {
   stream_.write(value);
 }
 
+// TODO: Explore providing a buffer to store the vector when repeat_vector is nonsingular
 /**
  * Reads from the underlying stream
  *
@@ -505,20 +506,14 @@ class Matrix {
    * Reads from the underlying stream
    *
    * @param Stream The stream to put read data into
-   * @param tiled If true, the matrix is tiled into Par x Par blocks
    * @param repeat_elements If true, repeats each element Par times. Only supported with tiling
    * @param repeat_row Number of times to repeat each row in a tile
-   * @param repeat_tile Number of times to repeat each tile. Ignored if tiled is false
-   * @param repeat_tile_row Number of times to repeat each row of tiles. Ignored if tiled is false
    * @param repeat_matrix Number of times to repeat the entire matrix
    */
-  void read(StreamType &stream, const bool tiled = false, const bool repeat_elements = false,
-            const int repeat_row = 1, const int repeat_tile = 1, const int repeat_tile_row = 1,
+  void read(StreamType &stream, const bool repeat_elements = false, const int repeat_row = 1,
             const int repeat_matrix = 1) {
 #ifndef __SYNTHESIS__
     assert(("repeat_row must be at least 1", repeat_row > 0));
-    assert(("repeat_tile must be at least 1", repeat_tile > 0));
-    assert(("repeat_tile_row must be at least 1", repeat_tile_row > 0));
     assert(("repeat_matrix must be at least 1", repeat_matrix > 0));
 #endif
     if (buffer_ == nullptr) {
@@ -526,10 +521,6 @@ class Matrix {
       // does a sequential read
 
 #ifndef __SYNTHESIS__
-      assert(
-          ("Pure stream matrices only support sequential reads for now. tile_size must remain "
-           "default value",
-           tiled == false));
       assert((
           "Pure stream matrices only support sequential reads for now. repeat_elements must remain "
           "default value",
@@ -538,14 +529,6 @@ class Matrix {
           ("Pure stream matrices only support sequential reads for now. repeat_row must remain "
            "default value",
            repeat_row == 1));
-      assert(
-          ("Pure stream matrices only support sequential reads for now. repeat_tile must remain "
-           "default value",
-           repeat_tile == 1));
-      assert((
-          "Pure stream matrices only support sequential reads for now. repeat_tile_row must remain "
-          "default value",
-          repeat_tile_row == 1));
       assert(
           ("Pure stream matrices only support sequential reads for now. repeat_matrix must remain "
            "default value",
@@ -561,93 +544,37 @@ class Matrix {
       assert(("repeat_elements only supported with tiling", !repeat_elements || tiled));
 #endif
       if (Order == RowMajor) {
-        if (tiled) {
-          for (int i = 0; i < repeat_matrix; i++) {                            // O(1,m,n)
-            for (int j = 0; j < rows_; j += Par) {                             // O(m)
-              for (int k = 0; k < repeat_tile_row; k++) {                      // O(1,m)
-                for (int l = 0; l < cols_; l += Par) {                         // O(n)
-                  for (int m = 0; m < repeat_tile; m++) {                      // O(1,m/Par,n/Par)
-                    for (int n = 0; n < Par; n++) {                            // O(Par)
-                      for (int o = 0; o < (repeat_elements) ? Par : 1; o++) {  // O(1,Par)
+        for (int i = 0; i < repeat_matrix; i++) {
+          for (int j = 0; j < rows_; j++) {
+            for (int k = 0; k < repeat_row; k++) {
+              for (int l = 0; l < cols_; l += Par) {
 #pragma HLS PIPELINE
-                        WideType<T, Par> value;
-                        for (int p = 0; p < Par; p++) {  // O(Par)
+                WideType<T, Par> value;
+                for (int m = 0; m < Par; m++) {
 #pragma HLS UNROLL
-                          if (repeat_elements) {
-                            value[p] = buffer_[(k + n) * cols_ + l + o];
-                          } else {
-                            value[p] = buffer_[(k + n) * cols_ + l + p];
-                          }
-                        }
-                        stream.write(value);
-                      }
-                    }
-                  }
+                  value[m] = buffer_[j * cols_ + l + m];
                 }
-              }
-            }
-          }
-        } else {  // Not tiled
-          for (int i = 0; i < repeat_matrix; i++) {
-            for (int j = 0; j < rows_; j++) {
-              for (int k = 0; k < repeat_row; k++) {
-                for (int l = 0; l < cols_; l += Par) {
-#pragma HLS PIPELINE
-                  WideType<T, Par> value;
-                  for (int m = 0; m < Par; m++) {
-#pragma HLS UNROLL
-                    value[m] = buffer_[j * cols_ + l + m];
-                  }
-                  stream.write(value);
-                }
+                stream.write(value);
               }
             }
           }
         }
       } else {  // Col Major Order
-        if (tiled) {
-          for (int i = 0; i < repeat_matrix; i++) {
-            for (int j = 0; j < cols_; j += Par) {
-              for (int k = 0; k < repeat_tile_row; k++) {
-                for (int l = 0; l < rows_; l += Par) {
-                  for (int m = 0; m < repeat_tile; m++) {
-                    for (int n = 0; n < Par; n++) {
-                      for (int o = 0; o < (repeat_elements) ? Par : 1; o++) {
+        for (int i = 0; i < repeat_matrix; i++) {
+          for (int j = 0; j < cols_; j++) {
+            for (int k = 0; k < repeat_row; k++) {
+              for (int l = 0; l < rows_; l += Par) {
 #pragma HLS PIPELINE
-                        WideType<T, Par> value;
-                        for (int p = 0; p < Par; p++) {
+                WideType<T, Par> value;
+                for (int m = 0; m < Par; m++) {
 #pragma HLS UNROLL
-                          if (repeat_elements) {
-                            value[p] = buffer_[(k + n) * rows_ + l + o];
-                          } else {
-                            value[p] = buffer_[(k + n) * rows_ + l + p];
-                          }
-                        }
-                        stream.write(value);
-                      }
-                    }
+                  if (repeat_elements) {
+                    value[m] = buffer_[j * rows_ + l + m];
+                  } else {
+                    value[m] = buffer_[j * rows_ + l + m];
                   }
                 }
-              }
-            }
-          }
-        } else {  // Not tiled
-          for (int i = 0; i < repeat_matrix; i++) {
-            for (int j = 0; j < cols_; j++) {
-              for (int k = 0; k < repeat_row; k++) {
-                for (int l = 0; l < rows_; l += Par) {
-#pragma HLS PIPELINE
-                  WideType<T, Par> value;
-                  for (int m = 0; m < Par; m++) {
-#pragma HLS UNROLL
-                    if (repeat_elements) {
-                      value[m] = buffer_[j * rows_ + l + m];
-                    } else {
-                      value[m] = buffer_[j * rows_ + l + m];
-                    }
-                  }
-                  stream.write(value);
-                }
+                stream.write(value);
               }
             }
           }
@@ -759,6 +686,23 @@ class Matrix {
   // TODO: Add support for reshaping and slicing. With the former returning a
   // vector potentially
 };
+
+/**
+ * A wrapper for a stream of data representing a general matrix stored in tiled order.asum
+ * 
+ * A 4x4 matrix in row-major order with a Par level of 4 is read in the following order
+ * 
+ *  00 01 04 05
+ *  02 03 06 07
+ *  08 09 12 13
+ *  10 11 14 15
+ * 
+ * Each stream read returns an entire tile, which is square and has Par elements
+ */
+template <typename T, MajorOrder Order = RowMajor,
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+class TiledMatrix : public Matrix<T, Order, Par> {};
+// TODO: Par must be a square number. Modify the default parameter to ensure this is the case
 
 /**
  * A wrapper for a stream of data representing a banded matrix.
