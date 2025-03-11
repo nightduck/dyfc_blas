@@ -515,6 +515,8 @@ class Matrix {
   void read(StreamType &stream, const bool repeat_elements = false, const int repeat_row = 1,
             const int repeat_matrix = 1) {
 #ifndef __SYNTHESIS__
+    assert(
+        ("repeat_elements is not supported yet, must be left default", repeat_elements == false));
     assert(("repeat_row must be at least 1", repeat_row > 0));
     assert(("repeat_matrix must be at least 1", repeat_matrix > 0));
 #endif
@@ -542,9 +544,6 @@ class Matrix {
         }
       }
     } else {
-#ifndef __SYNTHESIS__
-      assert(("repeat_elements only supported with tiling", !repeat_elements || tiled));
-#endif
       if (Order == RowMajor) {
         for (int i = 0; i < repeat_matrix; i++) {
           for (int j = 0; j < rows_; j++) {
@@ -586,8 +585,7 @@ class Matrix {
 #ifndef __SYNTHESIS__
 
       assert(("Output stream is unexpected length",
-              stream.size() == rows_ * cols_ * repeat_matrix * repeat_tile_row * repeat_tile *
-                                   repeat_row * (repeat_elements ? Par : 1) / Par));
+              stream.size() == rows_ * cols_ * repeat_matrix * repeat_row / Par));
 #endif
     }
   }

@@ -74,8 +74,8 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Order
   typename Matrix<T, OrderB, Par>::StreamType B_stream;
   if (OrderA == RowMajor && OrderB == ColMajor) {
 #pragma HLS DATAFLOW
-    A.read(A_stream, false, false, B.cols(), 1, 1, 1);
-    B.read(B_stream, false, false, 1, 1, 1, A.rows());
+    A.read(A_stream, false, B.cols(), 1);
+    B.read(B_stream, false, 1, A.rows());
 
     T r(0);
     WideType<T, Par> r_out;
@@ -165,7 +165,7 @@ template <typename T, const MajorOrder OrderA = RowMajor, const MajorOrder Order
           const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, OrderA, Par> &A,
         Matrix<T, OrderB, Par> &B, T beta, Matrix<T, OrderC, Par> &C,
-        Matrix<T, OrderC, Par> &result, T* buffer = nullptr) { {
+        Matrix<T, OrderC, Par> &result, T* buffer = nullptr) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
