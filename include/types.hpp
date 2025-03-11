@@ -429,7 +429,7 @@ class Matrix {
     buffer_ = buffer;
   }
 
-  // TODO: Revisit these in the context of hte new type design
+  // TODO: Revisit these in the context of the new type design
   // Matrix can't be copied.
   Matrix(const Matrix &other) = delete;
   Matrix &operator=(const Matrix &other) = delete;
@@ -502,6 +502,8 @@ class Matrix {
     stream_.write(value);
   }
 
+  // TODO: Explore providing a buffer to store the vector when repeat_row or repeat_matrix are
+  // nonsingular
   /**
    * Reads from the underlying stream
    *
@@ -689,14 +691,14 @@ class Matrix {
 
 /**
  * A wrapper for a stream of data representing a general matrix stored in tiled order.asum
- * 
+ *
  * A 4x4 matrix in row-major order with a Par level of 4 is read in the following order
- * 
+ *
  *  00 01 04 05
  *  02 03 06 07
  *  08 09 12 13
  *  10 11 14 15
- * 
+ *
  * Each stream read returns an entire tile, which is square and has Par elements
  */
 template <typename T, MajorOrder Order = RowMajor,

@@ -22,7 +22,9 @@
 namespace dyfc {
 namespace blas {
 
-// TODO: Specify separate order for r. It shouldn't have to be inferred from A and B (neccesarily)
+// TODO: Explore requiring intermediate buffer depending on the permutation of matrix orders.
+// EG RowMajor * ColMajor can be done in stream, but RowMajor * RowMajor requires a buffer of N (or
+// M depending on the order of the output matrix), and ColMajor * RowMajor requires a buffer of M*N.
 /**
  * Performs matrix multiplication
  *
@@ -48,9 +50,10 @@ namespace blas {
  * @param[out] result The output matrix to write to.
  */
 template <typename T, const MajorOrder OrderA = RowMajor, const MajorOrder OrderB = ColMajor,
-          const UpperLower UpLo = Upper, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+          const MajorOrder OrderC = RowMajor, const UpperLower UpLo = Upper,
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, OrderA, Par> &A,
-        Matrix<T, OrderB, Par> &B, Matrix<T, OrderA, Par> &result) {
+        Matrix<T, OrderB, Par> &B, Matrix<T, OrderA, Par> &result, T* buffer = nullptr) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
@@ -158,10 +161,11 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Order
  * @param[out] result The output matrix to write to.
  */
 template <typename T, const MajorOrder OrderA = RowMajor, const MajorOrder OrderB = ColMajor,
-          const UpperLower UpLo = Upper, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+          const MajorOrder OrderC = RowMajor, const UpperLower UpLo = Upper,
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, OrderA, Par> &A,
-        Matrix<T, OrderB, Par> &B, T beta, Matrix<T, OrderA, Par> &C,
-        Matrix<T, OrderA, Par> &result) {
+        Matrix<T, OrderB, Par> &B, T beta, Matrix<T, OrderC, Par> &C,
+        Matrix<T, OrderC, Par> &result, T* buffer = nullptr) { {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
@@ -179,7 +183,7 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Order
 
   if (OrderA != OrderB) {
     Matrix<T, OrderA, Par> AB(m, n);
-    mm(m, n, k, alpha, A, B, AB);
+    mm(m, n, k, alpha, A, B, AB, buffer);
     axpy(m, n, beta, C, AB, result);
 
 #ifndef __SYNTHESIS__
