@@ -21,8 +21,8 @@ void mat_inv(double x[dimN][dimN], double r[dimN][dimN]) {
     
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
   // constructor
-  dyfc::blas::Matrix<double, dyfc::blas::RowMajor, 4> x_m(FLATTEN_MATRIX(x), dimN, dimN);
-  dyfc::blas::Matrix<double, dyfc::blas::RowMajor, 4> r_m(dimN, dimN);
+  dyfc::blas::Matrix<double> x_m(FLATTEN_MATRIX(x), dimN, dimN);
+  dyfc::blas::Matrix<double> r_m(dimN, dimN);
   double buffer[dimN][2*dimN];
 
   // Call a templated version of the blas function being tested

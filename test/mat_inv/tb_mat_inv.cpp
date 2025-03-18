@@ -55,13 +55,6 @@ int main(int argc, char** argv) {
 
   // Compute the correct result with gaussian elimination
   for (int i = 0; i < dimN; i++) {
-  std::cout << "Gold answer: " << std::endl;
-  for (int i = 0; i < dimN; i++) {
-    for (int j = 0; j < 2*dimN; j++) {
-        std::cout << std::setw(12) << gjordan[i][j] << " ";
-    }
-    std::cout << std::endl;
-  }
     for (int j = 0; j < dimN; j++) {
       double alpha = gjordan[j][i];
       double beta = gjordan[i][i];
@@ -96,28 +89,6 @@ int main(int argc, char** argv) {
         break;
       }
     }
-  }
-
-  std::cout << "Input: " << std::endl;
-  for (int i = 0; i < dimN; i++) {
-    for (int j = 0; j < dimN; j++) {
-        std::cout << std::setw(12) << x[i][j] << " ";
-    }
-    std::cout << std::endl;
-  }
-  std::cout << "Computed: " << std::endl;
-  for (int i = 0; i < dimN; i++) {
-    for (int j = 0; j < dimN; j++) {
-        std::cout << std::setw(12) << r[i][j] << " ";
-    }
-    std::cout << std::endl;
-  }
-  std::cout << "Gold answer: " << std::endl;
-  for (int i = 0; i < dimN; i++) {
-    for (int j = 0; j < dimN; j++) {
-        std::cout << std::setw(12) << r_gold[i][j] << " ";
-    }
-    std::cout << std::endl;
   }
 
   if (failed_index > -1) {

@@ -16,7 +16,7 @@
 #define DYFC_BLAS_TEST_MAT_INV_HPP
 
 #ifndef dimN
-#define dimN 4
+#define dimN 64
 #endif
 
 // These are reference numbers for the benchmark, commenting them out will have no effect
