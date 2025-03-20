@@ -55,7 +55,7 @@ void dot(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &y, T &result) {
   WideType<T, Par> y_val;
   WideType<T, Par> xy_val;
   WideType<T, Par> r_val;
-  result = 0;
+  T rr = 0;
   for (unsigned int i = 0; i < n; i += Par) {
 #pragma HLS PIPELINE
     x_val = x_stream.read();
@@ -65,9 +65,10 @@ void dot(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &y, T &result) {
 #pragma HLS UNROLL
       xy_val[j] = x_val[j] * y_val[j];
     }
-    prefixsum<T, Par>(xy_val, r_val, result);
-    result = r_val[Par - 1];
+    prefixsum<T, Par>(xy_val, r_val, rr);
+    rr = r_val[Par - 1];
   }
+  result = rr;
 #ifndef __SYNTHESIS__
   assert(("Vector x isn't empty", x.empty()));
   assert(("Vector y isn't empty", y.empty()));
