@@ -62,8 +62,9 @@ protected:
   StreamType stream_;
   T *buffer_;
 
-#ifndef __SYNTHESIS__
   const unsigned int length_;
+
+#ifndef __SYNTHESIS__
   unsigned int num_readers_;
   unsigned int num_writers_;
 #endif
@@ -81,7 +82,7 @@ public:
       : stream_(), buffer_(nullptr), length_(length), num_readers_(0),
         num_writers_(0) {
 #else
-  Vector(const unsigned int length) : stream_(), buffer_(nullptr) {
+  Vector(const unsigned int length) : stream_(), buffer_(nullptr), length_(length) {
 #endif
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
@@ -102,7 +103,7 @@ public:
       : stream_(), buffer_(nullptr), length_(length), num_readers_(0),
         num_writers_(1) {
 #else
-  Vector(T p_Val, const unsigned int length) : stream_(), buffer_(nullptr) {
+  Vector(T p_Val, const unsigned int length) : stream_(), buffer_(nullptr), length_(length) {
 #endif
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
@@ -133,7 +134,7 @@ public:
         num_writers_(1){
 #else
   Vector(T *in_array, const unsigned int length)
-      : stream_(), buffer_(in_array) {
+      : stream_(), buffer_(in_array), length_(length) {
 #endif
 #pragma HLS INLINE
 #pragma HLS ARRAY_PARTITION variable = in_array type = cyclic factor = Par
@@ -341,9 +342,10 @@ protected:
   hls::stream<WideType<T, Par>> stream_;
   T *buffer_;
 
-#ifndef __SYNTHESIS__
   const unsigned int rows_;
   const unsigned int cols_;
+
+#ifndef __SYNTHESIS__
   unsigned int num_readers_;
   unsigned int num_writers_;
 #endif
@@ -363,7 +365,7 @@ public:
         num_writers_(0) {
 #else
   Matrix(const unsigned int Rows, const unsigned int Cols)
-      : stream_(), buffer_(nullptr) {
+      : stream_(), buffer_(nullptr), rows_(Rows), cols_(Cols) {
 #endif
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
@@ -391,7 +393,7 @@ public:
         num_writers_(1) {
 #else
   Matrix(T p_Val, const unsigned int Rows, const unsigned int Cols)
-      : stream_(), buffer_(nullptr) {
+      : stream_(), buffer_(nullptr), rows_(Rows), cols_(Cols) {
 #endif
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
@@ -430,7 +432,7 @@ public:
         num_writers_(1) {
 #else
   Matrix(T *buffer, const unsigned int Rows, const unsigned int Cols)
-      : stream_(), buffer_(buffer) {
+      : stream_(), buffer_(buffer), rows_(Rows), cols_(Cols) {
 #endif
 #pragma HLS INLINE
 #pragma HLS ARRAY_PARTITION variable = buffer type = cyclic factor = Par
@@ -655,6 +657,7 @@ public:
     }
   }
 
+  // NOTE: This doesn't synthesize correctly with the current design
   /** Inverts this matrix and writes it to provided matrix
    *
    * r = A^-1
@@ -670,123 +673,93 @@ public:
             result.rows() == rows_ && result.cols() == cols_));
     assert(("Must provide buffer of size 2*M*N", buffer != nullptr));
 #endif
-    int i = 0;
-    T alpha;
-    if (buffer_ ==
-        nullptr) { // Initial iteration of outer loop if Matrix is pure-stream
+
+LOOP_invert_primary_outer_loop:for (int i = 0; i < rows_; i++) {
       for (int j = 0; j < rows_; j++) {
-#pragma HLS PIPELINE
-        for (int k = 0; k < rows_; k += Par) {
-          WideType<T, Par> value = stream_.read();
+#pragma HLS PIPELINE II=2
+#pragma HLS LOOP_FLATTEN
+        for (int k = 0; k < 2 * rows_; k += Par) {
+        // for (int k = (i / Par) * Par; k < 2 * rows_; k += Par) {
+#pragma HLS dependence variable=buffer pointer inter distance=2*64/Par true 
+          // Populate WideTypes with values from stream, internal buffer, or intermediate buffer
+          T alpha;
+          WideType<T, Par> buffer_jrow_value;
+          WideType<T, Par> buffer_irow_value;
+          if (i == 0 && k < rows_ && buffer_ == nullptr) {  // Initial read if pure stream
+            buffer_jrow_value = stream_.read();
+            if (j == 0) {                               // If j==0, the irow is identical,...
+              buffer_irow_value = buffer_jrow_value;
+            } else {                                    // otherwise, copy it from the GJ buffer
+                for (int l = 0; l < Par; l++) {
+    #pragma HLS UNROLL
+                    buffer_irow_value[l] = buffer[i * 2 * rows_ + k + l];
+                }
+            }
+          } else if (i == 0 && k < rows_) { // Initial read from internal buffer
+            for (int l = 0; l < Par; l++) {
+#pragma HLS UNROLL
+              buffer_jrow_value[l] = buffer_[j * rows_ + k + l];
+              if (j == 0) {                               // If j==0, the irow is identical,...
+                buffer_irow_value[l] = buffer_jrow_value[l];
+              } else {                                    // otherwise, copy it from the GJ buffer
+                buffer_irow_value[l] = buffer[i * 2 * rows_ + k + l];
+              }
+            }
+          } else if (i == 0) { // Initial population of right half of Gauss Jordan buffer
+            for (int l = 0; l < Par; l++) {
+#pragma HLS UNROLL
+              if (k + l - rows_ == j) {
+                buffer_jrow_value[l] = 1;
+              } else {
+                buffer_jrow_value[l] = 0;
+              }
+              if (i == j) {                               // If j==0, the irow is identical,...
+                buffer_irow_value[l] = buffer_jrow_value[l];    
+              } else {                                    // otherwise, copy it from the GJ buffer
+                buffer_irow_value[l] = buffer[i * 2 * rows_ + k + l];
+              }
+            }
+          } else { // Subsequent reads from intermediate buffer
+            for (int l = 0; l < Par; l++) {
+#pragma HLS UNROLL
+              buffer_jrow_value[l] = buffer[j * 2 * rows_ + k + l];
+              buffer_irow_value[l] = buffer[i * 2 * rows_ + k + l];
+            }
+          }
+
+          // Compute alpha, if on new row
+          if (k == (i / Par) * Par) {
+            alpha = buffer_jrow_value[i % Par];
+            if (j < i) {
+                alpha /= buffer_irow_value[i % Par];
+            }
+          }
+
+          // Main Gauss Jordan reduction calculations
           for (int l = 0; l < Par; l++) {
 #pragma HLS UNROLL
-            if (k == 0) {
-              alpha = value[0];
-              if (alpha == 0 && j == 0) {
-                return false;
-              }
-            }
-            if (j == 0) {
-              buffer[j * 2 * rows_ + k + l] = value[l] / alpha;
-              if (j == k + l) {
-                buffer[j * 2 * rows_ + k + l + rows_] = 1 / alpha;
-              } else {
-                buffer[j * 2 * rows_ + k + l + rows_] = 0;
-              }
+            if (i == j) {
+              buffer[j * 2 * rows_ + k + l] = buffer_jrow_value[l] / alpha;
             } else {
-              buffer[j * 2 * rows_ + k + l] =
-                  value[l] - alpha * buffer[i * 2 * rows_ + k + l];
-              if (j == k + l) {
-                buffer[j * 2 * rows_ + k + l + rows_] =
-                    1 - alpha * buffer[i * 2 * rows_ + k + l];
-              } else {
-                buffer[j * 2 * rows_ + k + l + rows_] =
-                    -alpha * buffer[i * 2 * rows_ + k + l];
-              }
+              buffer[j * 2 * rows_ + k + l] = buffer_jrow_value[l] - alpha * buffer_irow_value[l];
             }
           }
-        }
-        for (int k = rows_; k < 2 * rows_; k++) {
-          if (j == 0) {
-            if (j == k) {
-              buffer[j * 2 * rows_ + k + rows_] = 1 / alpha;
-            } else {
-              buffer[j * 2 * rows_ + k + rows_] = 0;
-            }
-          } else {
-            if (j == k) {
-              buffer[j * 2 * rows_ + k + rows_] =
-                  1 - alpha * buffer[i * 2 * rows_ + k];
-            } else {
-              buffer[j * 2 * rows_ + k + rows_] =
-                  -alpha * buffer[i * 2 * rows_ + k];
-            }
-          }
-        }
-      }
-    } else {    // If matrix was created as a buffer
-      for (int j = 0; j < rows_; j++) {
-#pragma HLS PIPELINE
-        alpha = buffer_[j * rows_];
-        if (alpha == 0 && j == 0) {
-          return false;
-        }
-        for (int k = 0; k < rows_; k++) {
-          if (i == j) {
-            buffer[j * 2 * rows_ + k] = buffer_[j * rows_ + k] / alpha;
-          } else {
-            buffer[j * 2 * rows_ + k] =
-                buffer_[j * rows_ + k] - alpha * buffer[i * 2 * rows_ + k];
-          }
-        }
-        for (int k = rows_; k < 2 * rows_; k++) {
-          if (i == j) {
-            if (j == (k - rows_)) {
-              buffer[j * 2 * rows_ + k] = 1 / alpha;
-            } else {
-              buffer[j * 2 * rows_ + k] = 0;
-            }
-          } else {
-            if (j == (k - rows_)) {
-              buffer[j * 2 * rows_ + k] =
-                  1 - alpha * buffer[i * 2 * rows_ + k];
-            } else {
-              buffer[j * 2 * rows_ + k] =
-                  -alpha * buffer[i * 2 * rows_ + k];
-            }
-          }
+
+//           // Write result to intermediatebuffer
+//           for (int l = 0; l < Par; l++) {
+// #pragma HLS UNROLL
+//             buffer[j * 2 * rows_ + k + l] = buffer_jrow_value[l];
+//           }
         }
       }
     }
 
-    for (int i = 1; i < rows_; i++) {
-      for (int j = 0; j < rows_; j++) {
-#pragma HLS PIPELINE
-        T alpha;
-        if (j < i) {
-          alpha = buffer[j * 2 * rows_ + i] / buffer[i * 2 * rows_ + i];
-        } else {
-          alpha = buffer[j * 2 * rows_ + i];
-        }
-        if (alpha == 0 && i == j) {
-          return false;
-        }
-        for (int k = i; k < 2 * rows_; k++) {
-          if (i == j) {
-            buffer[j * 2 * rows_ + k] /= alpha;
-          } else {
-            buffer[j * 2 * rows_ + k] -= alpha * buffer[i * 2 * rows_ + k];
-          }
-        }
-      }
-    }
-
-    for (int i = 0; i < rows_; i++) {
+LOOP_invert_write_result:for (int i = 0; i < rows_; i++) {
       for (int j = rows_; j < 2*rows_; j += Par) {
 #pragma HLS PIPELINE
         WideType<T, Par> value;
         for (int k = 0; k < Par; k++) {
-#pragma HLS UNROLL
+#pragma HLS UNROLL factor=Par
           value[k] = buffer[i * 2 * rows_ + j + k];
         }
         result.write(value);
