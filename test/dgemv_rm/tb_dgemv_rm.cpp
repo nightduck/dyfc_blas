@@ -90,10 +90,10 @@ int main(int argc, char** argv) {
     }
   }
 
-  // Print results
-  for(int i = 0; i < dimN; i++) {
-    std::cout << "r[" << i << "] = " << r[i] << ", r_gold[" << i << "] = " << r_gold[i] << std::endl;
-  }
+  // // Print results
+  // for(int i = 0; i < dimN; i++) {
+  //   std::cout << "r[" << i << "] = " << r[i] << ", r_gold[" << i << "] = " << r_gold[i] << std::endl;
+  // }
 
   if (failed_index > -1) {
     std::cout << "FAILED TEST" << std::endl;

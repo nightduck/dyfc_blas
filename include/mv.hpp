@@ -44,7 +44,7 @@ namespace blas {
 template <typename T, const MajorOrder Order = RowMajor,
           const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Par> &A,
-        Vector<T, Par> &x, Vector<T, Par> &result) {
+        Vector<T, Par> &x, Vector<T, Par> &result, T *buffer = nullptr) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
@@ -56,6 +56,8 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
   assert(("This matrix is a pure stream and only accepts one reader", A.read_lock()));
   assert(("This vector is a pure stream and only accepts one reader", x.read_lock()));
   assert(("This vector only accepts one writer", result.write_lock()));
+  assert(("If A is ColMajor, a buffer of size M must be provided",
+          Order == RowMajor || buffer != nullptr));
 #endif
   typename Matrix<T, Order, Par>::StreamType A_stream;
   typename Vector<T, Par>::StreamType x_stream;
@@ -91,31 +93,44 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
     }
   } else if (Order == ColMajor) {
     x.read(x_stream);
-    WideType<T, Par> ring_buffer[m / Par];
+    // typename Vector<T, Par>::StreamType ring_buffer_stream;
+    //     WideType<T, Par> ring_buffer[m / Par];
+    // #pragma HLS ARRAY_PARTITION variable=ring_buffer complete dim=1
     WideType<T, Par> v_val = T(0);
 
   LOOP_gemv_cm:
-    for (size_t i = 0; i < n; i++) {
-      for (size_t j = 0; j < m; j += Par) {
-        WideType<T, Par> m_val = A_stream.read();
-        WideType<T, Par> r_val;
-        WideType<T, Par> rr_val = T(0);  // Running sum of these rows
-        if (i > 0) {
-          // rr_val = ring_buffer.read();
-          rr_val = ring_buffer[j / Par];
-        }
-        if (j == 0 && i % Par == 0) {
-          v_val = x_stream.read();
-        }
-        for (int k = 0; k < Par; k++) {
+    for (size_t i = 0; i < n; i += Par) {
+      for (size_t j = 0; j < Par; j++) {
+        for (size_t k = 0; k < m; k += Par) {
+#pragma HLS LOOP_FLATTEN
+#pragma HLS PIPELINE
+          WideType<T, Par> m_val = A_stream.read();
+          WideType<T, Par> r_val;
+          WideType<T, Par> rr_val = T(0);  // Running sum of these rows
+          if (i + j > 0) {
+            // rr_val = ring_buffer_stream.read();
+            for (int l = 0; l < Par; l++) {
 #pragma HLS UNROLL
-          r_val[k] = alpha * m_val[k] * v_val[i % Par] + rr_val[k];
-        }
-        if (i < n - 1) {
-          // ring_buffer.write(r_val);
-          ring_buffer[j / Par] = r_val;
-        } else {
-          result.write(r_val);
+              rr_val[l] = buffer[k + l];
+            }
+          }
+          if (k == 0 && j == 0) {
+            v_val = x_stream.read();
+          }
+        LOOP_gemv_cm_inner:
+          for (int l = 0; l < Par; l++) {
+#pragma HLS UNROLL
+            r_val[l] = alpha * m_val[l] * v_val[j] + rr_val[l];
+          }
+          if (i + j < n - 1) {
+            // ring_buffer_stream.write(r_val);
+            for (int l = 0; l < Par; l++) {
+#pragma HLS UNROLL
+              buffer[k + l] = r_val[l];
+            }
+          } else {
+            result.write(r_val);
+          }
         }
       }
     }
@@ -160,7 +175,7 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
 template <typename T, const MajorOrder Order = RowMajor,
           const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Par> &A,
-        Vector<T, Par> &x, T beta, Vector<T, Par> &y, Vector<T, Par> &result) {
+        Vector<T, Par> &x, T beta, Vector<T, Par> &y, Vector<T, Par> &result, T *buffer = nullptr) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
@@ -170,10 +185,12 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
   assert(n == x.length());
   assert(m == y.length());
   assert(m == result.length());
+  assert(("If A is ColMajor, a buffer of size M must be provided",
+          Order == RowMajor || buffer != nullptr));
 #endif
   Vector<T, Par> Ax(m);
-  mv(m, n, alpha, A, x, Ax);
-  axpy(m, beta, y, Ax, result);
+  mv<T, Order, Par>(m, n, alpha, A, x, Ax, buffer);
+  axpy<T, Par>(m, beta, y, Ax, result);
 
 #ifndef __SYNTHESIS__
   assert(("Matrix A isn't empty", A.empty()));

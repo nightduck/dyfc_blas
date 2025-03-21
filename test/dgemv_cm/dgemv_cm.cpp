@@ -27,7 +27,8 @@ void dgemv_cm(double alpha, double A[dimN][dimM], double x[dimN], double beta, d
   dyfc::blas::Vector<double> r_v(dimM);
 
   // Call a templated version of the blas function being tested
-  dyfc::blas::mv<double, dyfc::blas::ColMajor>(dimM, dimN, alpha, A_m, x_v, beta, y_v, r_v);
+  double buffer[dimM];
+  dyfc::blas::mv<double, dyfc::blas::ColMajor>(dimM, dimN, alpha, A_m, x_v, beta, y_v, r_v, buffer);
 
   // Write the result back to the output array
   r_v.to_memory(r);

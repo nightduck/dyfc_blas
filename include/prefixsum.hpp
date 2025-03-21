@@ -89,7 +89,7 @@ void prefixsum(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &result) {
   x.read(x_stream);
   WideType<T, Par> x_val;
   WideType<T, Par> r_val;
-  T r = 0;
+  T r(0);
   for (unsigned int i = 0; i < n; i += Par) {
 #pragma HLS PIPELINE
     x_val = x_stream.read();

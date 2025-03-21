@@ -52,8 +52,9 @@ namespace blas {
 template <typename T, const MajorOrder OrderA = RowMajor, const MajorOrder OrderB = ColMajor,
           const MajorOrder OrderC = RowMajor, const UpperLower UpLo = Upper,
           const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
-void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, OrderA, Par> &A,
-        Matrix<T, OrderB, Par> &B, Matrix<T, OrderA, Par> &result, T* buffer = nullptr) {
+void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alpha,
+        Matrix<T, OrderA, Par> &A, Matrix<T, OrderB, Par> &B, Matrix<T, OrderA, Par> &result,
+        T *buffer = nullptr) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
@@ -163,9 +164,9 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Order
 template <typename T, const MajorOrder OrderA = RowMajor, const MajorOrder OrderB = ColMajor,
           const MajorOrder OrderC = RowMajor, const UpperLower UpLo = Upper,
           const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
-void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, OrderA, Par> &A,
-        Matrix<T, OrderB, Par> &B, T beta, Matrix<T, OrderC, Par> &C,
-        Matrix<T, OrderC, Par> &result, T* buffer = nullptr) {
+void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alpha,
+        Matrix<T, OrderA, Par> &A, Matrix<T, OrderB, Par> &B, T beta, Matrix<T, OrderC, Par> &C,
+        Matrix<T, OrderC, Par> &result, T *buffer = nullptr) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);

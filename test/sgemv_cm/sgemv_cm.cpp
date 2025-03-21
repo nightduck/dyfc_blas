@@ -27,7 +27,8 @@ void sgemv_cm(float alpha, float A[dimN][dimM], float x[dimN], float beta, float
   dyfc::blas::Vector<float> r_v(dimM);
 
   // Call a templated version of the blas function being tested
-  dyfc::blas::mv<float, dyfc::blas::ColMajor>(dimM, dimN, alpha, A_m, x_v, beta, y_v, r_v);
+  float buffer[dimM];
+  dyfc::blas::mv<float, dyfc::blas::ColMajor>(dimM, dimN, alpha, A_m, x_v, beta, y_v, r_v, buffer);
 
   // Write the result back to the output array
   r_v.to_memory(r);

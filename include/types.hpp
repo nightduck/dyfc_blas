@@ -29,19 +29,17 @@ enum MajorOrder { RowMajor, ColMajor };
 enum UpperLower { Upper, Lower };
 
 // Alias to avoid confusing hls vector with blas vector
-template <typename T, unsigned int Par> using WideType = hls::vector<T, Par>;
+template <typename T, unsigned int Par>
+using WideType = hls::vector<T, Par>;
 
-// NOTE: A design decision was made to include the vector and matrix dimensions
-// as class members
-//    instead of template parameters. This is because the functions that will
-//    accept vectors and matrices as arguments would also need to specify the
-//    dimensions as template arguments, which creates multiple compiled
-//    implementations of the same function. While different implementations may
-//    be needed for different levels of parallelism, a block capable of
-//    processing a 128x128 matrix should also be able to process a 1024x1024
-//    matrix. for the same operation. Removing the template parameters from said
-//    function allows for a single implementation to be used for all argument
-//    sizes.
+// NOTE: A design decision was made to include the vector and matrix dimensions as class members
+// instead of template parameters. This is because the functions that will accept vectors and
+// matrices as arguments would also need to specify the dimensions as template arguments, which
+// creates multiple compiled implementations of the same function. While different implementations
+// may be needed for different levels of parallelism, a block capable of processing a 128x128 matrix
+// should also be able to process a 1024x1024 matrix. for the same operation. Removing the template
+// parameters from said function allows for a single implementation to be used for all argument
+// sizes.
 
 constexpr size_t log2(size_t n) { return ((n < 2) ? 0 : 1 + log2(n / 2)); }
 
@@ -55,10 +53,10 @@ constexpr size_t log2(size_t n) { return ((n < 2) ? 0 : 1 + log2(n / 2)); }
  */
 template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 class Vector {
-public:
+ public:
   using StreamType = typename hls::stream<WideType<T, Par>>;
 
-protected:
+ protected:
   StreamType stream_;
   T *buffer_;
 
@@ -69,7 +67,7 @@ protected:
   unsigned int num_writers_;
 #endif
 
-public:
+ public:
   // Constructors
   /**
    * Creates a vector with a given length. Performs checks to validate the
@@ -79,8 +77,7 @@ public:
    */
 #ifndef __SYNTHESIS__
   Vector(const unsigned int length)
-      : stream_(), buffer_(nullptr), length_(length), num_readers_(0),
-        num_writers_(0) {
+      : stream_(), buffer_(nullptr), length_(length), num_readers_(0), num_writers_(0) {
 #else
   Vector(const unsigned int length) : stream_(), buffer_(nullptr), length_(length) {
 #endif
@@ -100,8 +97,7 @@ public:
    */
 #ifndef __SYNTHESIS__
   Vector(T p_Val, const unsigned int length)
-      : stream_(), buffer_(nullptr), length_(length), num_readers_(0),
-        num_writers_(1) {
+      : stream_(), buffer_(nullptr), length_(length), num_readers_(0), num_writers_(1) {
 #else
   Vector(T p_Val, const unsigned int length) : stream_(), buffer_(nullptr), length_(length) {
 #endif
@@ -130,17 +126,18 @@ public:
    */
 #ifndef __SYNTHESIS__
   Vector(T *in_array, const unsigned int length)
-      : stream_(), buffer_(in_array), length_(length), num_readers_(0),
+      : stream_(),
+        buffer_(in_array),
+        length_(length),
+        num_readers_(0),
         num_writers_(1){
 #else
-  Vector(T *in_array, const unsigned int length)
-      : stream_(), buffer_(in_array), length_(length) {
+  Vector(T *in_array, const unsigned int length) : stream_(), buffer_(in_array), length_(length) {
 #endif
 #pragma HLS INLINE
 #pragma HLS ARRAY_PARTITION variable = in_array type = cyclic factor = Par
 #pragma HLS STREAM variable = stream_ depth = 0
-            static_assert(Par % 1 << log2(Par) == 0,
-                          "Par must be a power of 2");
+            static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
 #ifndef __SYNTHESIS__
   assert(("length must be greater than 0", length > 0));
   assert(("length must be a multiple of Par", length % Par == 0));
@@ -195,9 +192,10 @@ bool read_lock() {
 void write(WideType<T, Par> value) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
-  assert(("An input buffer has been provided for this vector. No additional "
-          "input is accepted",
-          buffer_ == nullptr));
+  assert(
+      ("An input buffer has been provided for this vector. No additional "
+       "input is accepted",
+       buffer_ == nullptr));
 #endif
   stream_.write(value);
 }
@@ -223,8 +221,7 @@ void read(StreamType &stream, int repeat_elements = 1, int repeat_vector = 1) {
   assert(("repeat_vector must be at least 1", repeat_vector > 0));
 
   // TODO: For now only sequential reads are supported
-  assert(("repeat_elements is not supported yet, must be left default",
-          repeat_elements == 1));
+  assert(("repeat_elements is not supported yet, must be left default", repeat_elements == 1));
 #endif
   if (buffer_ == nullptr) {
     StreamType repeat_stream;
@@ -320,7 +317,7 @@ unsigned int shape() {
 
 // TODO: Add support for reshaping and slicing. With the former returning a
 // matrix potentially
-}; // namespace blas
+};  // namespace blas
 
 /**
  * A wrapper for a stream of data representing a general matrix.
@@ -335,10 +332,10 @@ unsigned int shape() {
 template <typename T, MajorOrder Order = RowMajor,
           const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 class Matrix {
-public:
+ public:
   using StreamType = typename hls::stream<WideType<T, Par>>;
 
-protected:
+ protected:
   hls::stream<WideType<T, Par>> stream_;
   T *buffer_;
 
@@ -350,7 +347,7 @@ protected:
   unsigned int num_writers_;
 #endif
 
-public:
+ public:
   // Constructors
   /**
    * Creates a matrix with a given number of rows and columns. Performs checks
@@ -361,8 +358,7 @@ public:
    */
 #ifndef __SYNTHESIS__
   Matrix(const unsigned int Rows, const unsigned int Cols)
-      : stream_(), buffer_(nullptr), rows_(Rows), cols_(Cols), num_readers_(0),
-        num_writers_(0) {
+      : stream_(), buffer_(nullptr), rows_(Rows), cols_(Cols), num_readers_(0), num_writers_(0) {
 #else
   Matrix(const unsigned int Rows, const unsigned int Cols)
       : stream_(), buffer_(nullptr), rows_(Rows), cols_(Cols) {
@@ -389,8 +385,7 @@ public:
    */
 #ifndef __SYNTHESIS__
   Matrix(T p_Val, const unsigned int Rows, const unsigned int Cols)
-      : stream_(), buffer_(nullptr), rows_(Rows), cols_(Cols), num_readers_(0),
-        num_writers_(1) {
+      : stream_(), buffer_(nullptr), rows_(Rows), cols_(Cols), num_readers_(0), num_writers_(1) {
 #else
   Matrix(T p_Val, const unsigned int Rows, const unsigned int Cols)
       : stream_(), buffer_(nullptr), rows_(Rows), cols_(Cols) {
@@ -428,8 +423,7 @@ public:
  */
 #ifndef __SYNTHESIS__
   Matrix(T *buffer, const unsigned int Rows, const unsigned int Cols)
-      : stream_(), buffer_(buffer), rows_(Rows), cols_(Cols), num_readers_(0),
-        num_writers_(1) {
+      : stream_(), buffer_(buffer), rows_(Rows), cols_(Cols), num_readers_(0), num_writers_(1) {
 #else
   Matrix(T *buffer, const unsigned int Rows, const unsigned int Cols)
       : stream_(), buffer_(buffer), rows_(Rows), cols_(Cols) {
@@ -457,8 +451,7 @@ public:
 
   // Matrix can be moved, but this consumes it
   Matrix(Matrix &&other) noexcept
-      : stream_(std::move(other.stream_)), rows_(other.rows_),
-        cols_(other.cols_) {
+      : stream_(std::move(other.stream_)), rows_(other.rows_), cols_(other.cols_) {
     // TODO: Set consume flag when that's implemented
   }
   Matrix &operator=(Matrix &&other) noexcept {
@@ -518,9 +511,10 @@ public:
   void write(WideType<T, Par> value) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
-    assert(("An input buffer has been provided for this matrix. No additional "
-            "input is accepted",
-            buffer_ == nullptr));
+    assert(
+        ("An input buffer has been provided for this matrix. No additional "
+         "input is accepted",
+         buffer_ == nullptr));
 #endif
     stream_.write(value);
   }
@@ -536,11 +530,11 @@ public:
    * @param repeat_row Number of times to repeat each row in a tile
    * @param repeat_matrix Number of times to repeat the entire matrix
    */
-  void read(StreamType &stream, const bool repeat_elements = false,
-            const int repeat_row = 1, const int repeat_matrix = 1) {
+  void read(StreamType &stream, const bool repeat_elements = false, const int repeat_row = 1,
+            const int repeat_matrix = 1) {
 #ifndef __SYNTHESIS__
-    assert(("repeat_elements is not supported yet, must be left default",
-            repeat_elements == false));
+    assert(
+        ("repeat_elements is not supported yet, must be left default", repeat_elements == false));
     assert(("repeat_row must be at least 1", repeat_row > 0));
     assert(("repeat_matrix must be at least 1", repeat_matrix > 0));
 #endif
@@ -549,18 +543,21 @@ public:
       // the parameters and does a sequential read
 
 #ifndef __SYNTHESIS__
-      assert(("Pure stream matrices only support sequential reads for now. "
-              "repeat_elements must remain "
-              "default value",
-              repeat_elements == false));
-      assert(("Pure stream matrices only support sequential reads for now. "
-              "repeat_row must remain "
-              "default value",
-              repeat_row == 1));
-      assert(("Pure stream matrices only support sequential reads for now. "
-              "repeat_matrix must remain "
-              "default value",
-              repeat_matrix == 1));
+      assert(
+          ("Pure stream matrices only support sequential reads for now. "
+           "repeat_elements must remain "
+           "default value",
+           repeat_elements == false));
+      assert(
+          ("Pure stream matrices only support sequential reads for now. "
+           "repeat_row must remain "
+           "default value",
+           repeat_row == 1));
+      assert(
+          ("Pure stream matrices only support sequential reads for now. "
+           "repeat_matrix must remain "
+           "default value",
+           repeat_matrix == 1));
 #endif
       for (int i = 0; i < rows_; i++) {
         for (int j = 0; j < cols_; j += Par) {
@@ -584,20 +581,17 @@ public:
             }
           }
         }
-      } else { // Col Major Order
+      } else {  // Col Major Order
         for (int i = 0; i < repeat_matrix; i++) {
           for (int j = 0; j < cols_; j++) {
-            for (int k = 0; k < repeat_row; k++) {
+            for (int k = 0; k < repeat_row;
+                 k++) {  // TODO: I don't think this loop is in the right place
               for (int l = 0; l < rows_; l += Par) {
 #pragma HLS PIPELINE
                 WideType<T, Par> value;
                 for (int m = 0; m < Par; m++) {
 #pragma HLS UNROLL
-                  if (repeat_elements) {
-                    value[m] = buffer_[j * rows_ + l + m];
-                  } else {
-                    value[m] = buffer_[j * rows_ + l + m];
-                  }
+                  value[m] = buffer_[j * rows_ + l + m];
                 }
                 stream.write(value);
               }
@@ -608,9 +602,8 @@ public:
 
 #ifndef __SYNTHESIS__
 
-      assert(
-          ("Output stream is unexpected length",
-           stream.size() == rows_ * cols_ * repeat_matrix * repeat_row / Par));
+      assert(("Output stream is unexpected length",
+              stream.size() == rows_ * cols_ * repeat_matrix * repeat_row / Par));
 #endif
     }
   }
@@ -674,38 +667,39 @@ public:
     assert(("Must provide buffer of size 2*M*N", buffer != nullptr));
 #endif
 
-LOOP_invert_primary_outer_loop:for (int i = 0; i < rows_; i++) {
+  LOOP_invert_primary_outer_loop:
+    for (int i = 0; i < rows_; i++) {
       for (int j = 0; j < rows_; j++) {
-#pragma HLS PIPELINE II=2
+#pragma HLS PIPELINE II = 2
 #pragma HLS LOOP_FLATTEN
         for (int k = 0; k < 2 * rows_; k += Par) {
-        // for (int k = (i / Par) * Par; k < 2 * rows_; k += Par) {
-#pragma HLS dependence variable=buffer pointer inter distance=2*64/Par true 
+          // for (int k = (i / Par) * Par; k < 2 * rows_; k += Par) {
+#pragma HLS dependence variable = buffer pointer inter distance = 2 * 64 / Par true
           // Populate WideTypes with values from stream, internal buffer, or intermediate buffer
           T alpha;
           WideType<T, Par> buffer_jrow_value;
           WideType<T, Par> buffer_irow_value;
           if (i == 0 && k < rows_ && buffer_ == nullptr) {  // Initial read if pure stream
             buffer_jrow_value = stream_.read();
-            if (j == 0) {                               // If j==0, the irow is identical,...
+            if (j == 0) {  // If j==0, the irow is identical,...
               buffer_irow_value = buffer_jrow_value;
-            } else {                                    // otherwise, copy it from the GJ buffer
-                for (int l = 0; l < Par; l++) {
-    #pragma HLS UNROLL
-                    buffer_irow_value[l] = buffer[i * 2 * rows_ + k + l];
-                }
-            }
-          } else if (i == 0 && k < rows_) { // Initial read from internal buffer
-            for (int l = 0; l < Par; l++) {
+            } else {  // otherwise, copy it from the GJ buffer
+              for (int l = 0; l < Par; l++) {
 #pragma HLS UNROLL
-              buffer_jrow_value[l] = buffer_[j * rows_ + k + l];
-              if (j == 0) {                               // If j==0, the irow is identical,...
-                buffer_irow_value[l] = buffer_jrow_value[l];
-              } else {                                    // otherwise, copy it from the GJ buffer
                 buffer_irow_value[l] = buffer[i * 2 * rows_ + k + l];
               }
             }
-          } else if (i == 0) { // Initial population of right half of Gauss Jordan buffer
+          } else if (i == 0 && k < rows_) {  // Initial read from internal buffer
+            for (int l = 0; l < Par; l++) {
+#pragma HLS UNROLL
+              buffer_jrow_value[l] = buffer_[j * rows_ + k + l];
+              if (j == 0) {  // If j==0, the irow is identical,...
+                buffer_irow_value[l] = buffer_jrow_value[l];
+              } else {  // otherwise, copy it from the GJ buffer
+                buffer_irow_value[l] = buffer[i * 2 * rows_ + k + l];
+              }
+            }
+          } else if (i == 0) {  // Initial population of right half of Gauss Jordan buffer
             for (int l = 0; l < Par; l++) {
 #pragma HLS UNROLL
               if (k + l - rows_ == j) {
@@ -713,13 +707,13 @@ LOOP_invert_primary_outer_loop:for (int i = 0; i < rows_; i++) {
               } else {
                 buffer_jrow_value[l] = 0;
               }
-              if (i == j) {                               // If j==0, the irow is identical,...
-                buffer_irow_value[l] = buffer_jrow_value[l];    
-              } else {                                    // otherwise, copy it from the GJ buffer
+              if (i == j) {  // If j==0, the irow is identical,...
+                buffer_irow_value[l] = buffer_jrow_value[l];
+              } else {  // otherwise, copy it from the GJ buffer
                 buffer_irow_value[l] = buffer[i * 2 * rows_ + k + l];
               }
             }
-          } else { // Subsequent reads from intermediate buffer
+          } else {  // Subsequent reads from intermediate buffer
             for (int l = 0; l < Par; l++) {
 #pragma HLS UNROLL
               buffer_jrow_value[l] = buffer[j * 2 * rows_ + k + l];
@@ -731,7 +725,7 @@ LOOP_invert_primary_outer_loop:for (int i = 0; i < rows_; i++) {
           if (k == (i / Par) * Par) {
             alpha = buffer_jrow_value[i % Par];
             if (j < i) {
-                alpha /= buffer_irow_value[i % Par];
+              alpha /= buffer_irow_value[i % Par];
             }
           }
 
@@ -745,21 +739,22 @@ LOOP_invert_primary_outer_loop:for (int i = 0; i < rows_; i++) {
             }
           }
 
-//           // Write result to intermediatebuffer
-//           for (int l = 0; l < Par; l++) {
-// #pragma HLS UNROLL
-//             buffer[j * 2 * rows_ + k + l] = buffer_jrow_value[l];
-//           }
+          //           // Write result to intermediatebuffer
+          //           for (int l = 0; l < Par; l++) {
+          // #pragma HLS UNROLL
+          //             buffer[j * 2 * rows_ + k + l] = buffer_jrow_value[l];
+          //           }
         }
       }
     }
 
-LOOP_invert_write_result:for (int i = 0; i < rows_; i++) {
-      for (int j = rows_; j < 2*rows_; j += Par) {
+  LOOP_invert_write_result:
+    for (int i = 0; i < rows_; i++) {
+      for (int j = rows_; j < 2 * rows_; j += Par) {
 #pragma HLS PIPELINE
         WideType<T, Par> value;
         for (int k = 0; k < Par; k++) {
-#pragma HLS UNROLL factor=Par
+#pragma HLS UNROLL factor = Par
           value[k] = buffer[i * 2 * rows_ + j + k];
         }
         result.write(value);
@@ -767,8 +762,7 @@ LOOP_invert_write_result:for (int i = 0; i < rows_; i++) {
     }
 
 #ifndef __SYNTHESIS__
-    assert(("Internal stream isn't empty after matrix inversion",
-            stream_.empty()));
+    assert(("Internal stream isn't empty after matrix inversion", stream_.empty()));
 #endif
     return true;
   }
@@ -861,8 +855,7 @@ class TiledMatrix : public Matrix<T, Order, Par> {};
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
  */
-template <typename T, const unsigned int SubDiagonals,
-          const unsigned int SupDiagonals,
+template <typename T, const unsigned int SubDiagonals, const unsigned int SupDiagonals,
           const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 class BandedMatrix : public Matrix<T, RowMajor, Par> {};
 
@@ -891,8 +884,7 @@ using DiagonalMatrix = BandedMatrix<T, 0, 0, Par>;
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
  */
-template <typename T, const MajorOrder Order = RowMajor,
-          const UpperLower UpLo = Upper,
+template <typename T, const MajorOrder Order = RowMajor, const UpperLower UpLo = Upper,
           const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 class TriangularMatrix : public Matrix<T, Order, Par> {};
 
@@ -908,11 +900,9 @@ class TriangularMatrix : public Matrix<T, Order, Par> {};
  * power of 2.
  */
 template <typename T, const unsigned int Diagonals,
-          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T),
-          const UpperLower UpLo = Upper>
-class TriangularBandedMatrix
-    : public BandedMatrix<T, (UpLo == Upper) ? 0 : Diagonals,
-                          (UpLo == Lower) ? 0 : Diagonals, Par> {};
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T), const UpperLower UpLo = Upper>
+class TriangularBandedMatrix : public BandedMatrix<T, (UpLo == Upper) ? 0 : Diagonals,
+                                                   (UpLo == Lower) ? 0 : Diagonals, Par> {};
 
 // TODO: Add support for unit triangular matrices and their banded equivalents
 
@@ -928,8 +918,7 @@ class TriangularBandedMatrix
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
  */
-template <typename T, const MajorOrder Order = RowMajor,
-          const UpperLower UpLo = Upper,
+template <typename T, const MajorOrder Order = RowMajor, const UpperLower UpLo = Upper,
           const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 class SymmetricMatrix : public Matrix<T, Order, Par> {};
 
@@ -944,11 +933,9 @@ class SymmetricMatrix : public Matrix<T, Order, Par> {};
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
  */
-template <typename T, const unsigned int Diagonals,
-          const UpperLower UpLo = Upper,
+template <typename T, const unsigned int Diagonals, const UpperLower UpLo = Upper,
           const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
-class SymmetricBandedMatrix
-    : public BandedMatrix<T, Diagonals, Diagonals, Par> {};
+class SymmetricBandedMatrix : public BandedMatrix<T, Diagonals, Diagonals, Par> {};
 
 /**
  * A wrapper for a stream of data representing a Hermitian matrix.
@@ -963,8 +950,7 @@ class SymmetricBandedMatrix
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
  */
-template <typename T, const MajorOrder Order = RowMajor,
-          const UpperLower UpLo = Upper,
+template <typename T, const MajorOrder Order = RowMajor, const UpperLower UpLo = Upper,
           const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 class HermitianMatrix : public Matrix<T, Order, Par> {};
 
@@ -981,11 +967,9 @@ class HermitianMatrix : public Matrix<T, Order, Par> {};
  * @tparam Par Number of elements retrieved in one read operation. Must be a
  * power of 2.
  */
-template <typename T, const unsigned int Diagonals,
-          const UpperLower UpLo = Upper,
+template <typename T, const unsigned int Diagonals, const UpperLower UpLo = Upper,
           const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
-class HermitianBandedMatrix
-    : public BandedMatrix<T, Diagonals, Diagonals, Par> {};
+class HermitianBandedMatrix : public BandedMatrix<T, Diagonals, Diagonals, Par> {};
 
 /**
  * Transposes a column-major matrix into a row-major matrix.
@@ -1003,8 +987,7 @@ class HermitianBandedMatrix
 template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void transpose(Matrix<T, ColMajor, Par> &A, Matrix<T, RowMajor, Par> &AT) {
 #ifndef __SYNTHESIS__
-  assert(("Dimensions of A and AT must match",
-          A.rows() == AT.cols() && A.cols() == AT.rows()));
+  assert(("Dimensions of A and AT must match", A.rows() == AT.cols() && A.cols() == AT.rows()));
 #endif
 #pragma HLS DATAFLOW
   typename Matrix<T, ColMajor, Par>::StreamType stream;
@@ -1032,8 +1015,7 @@ void transpose(Matrix<T, ColMajor, Par> &A, Matrix<T, RowMajor, Par> &AT) {
 template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void transpose(Matrix<T, RowMajor, Par> &A, Matrix<T, ColMajor, Par> &AT) {
 #ifndef __SYNTHESIS__
-  assert(("Dimensions of A and AT must match",
-          A.rows() == AT.cols() && A.cols() == AT.rows()));
+  assert(("Dimensions of A and AT must match", A.rows() == AT.cols() && A.cols() == AT.rows()));
 #endif
 #pragma HLS DATAFLOW
   typename Matrix<T, RowMajor, Par>::StreamType stream;
@@ -1045,7 +1027,7 @@ void transpose(Matrix<T, RowMajor, Par> &A, Matrix<T, ColMajor, Par> &AT) {
   }
 }
 
-} // namespace dyfc
-} // namespace dyfc
+}  // namespace dyfc
+}  // namespace dyfc
 
-#endif // DYFC_BLAS_TYPES_HPP
+#endif  // DYFC_BLAS_TYPES_HPP
