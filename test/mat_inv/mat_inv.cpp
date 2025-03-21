@@ -12,25 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "sgemv_rm.hpp"
+#include "mat_inv.hpp"
 
 #include "blas.hpp"
 
-void sgemv_rm(float alpha, float A[dimM][dimN], float x[dimN], float beta, float y[dimM], float r[dimM]) {
+void mat_inv(double x[dimN][dimN], double r[dimN][dimN]) {
 #pragma HLS DATAFLOW
-
+    
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
   // constructor
-  dyfc::blas::Vector<float> x_v(x, dimN);
-  dyfc::blas::Vector<float> y_v(y, dimM);
-  dyfc::blas::Matrix<float> A_m(FLATTEN_MATRIX(A), dimM, dimN);
-  dyfc::blas::Vector<float> r_v(dimM);
+  dyfc::blas::Matrix<double> x_m(FLATTEN_MATRIX(x), dimN, dimN);
+  dyfc::blas::Matrix<double> r_m(dimN, dimN);
+  double buffer[dimN][2*dimN];
 
   // Call a templated version of the blas function being tested
-  dyfc::blas::mv<float, dyfc::blas::RowMajor>(dimM, dimN, alpha, A_m, x_v, beta, y_v, r_v);
+  bool result = x_m.invert(r_m, FLATTEN_MATRIX(buffer));
+  #ifndef __SYNTHESIS__
+  assert(("Matrix inversion failed", result == true));
+  #endif
 
   // Write the result back to the output array
-  r_v.to_memory(r);
+  r_m.to_memory(FLATTEN_MATRIX(r));
 
   return;
 }

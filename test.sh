@@ -7,8 +7,9 @@ TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/test" && pwd)"
 
 # Get the list of command line arguments
 if [ "$#" -eq 0 ]; then
-  # No arguments passed, use all subdirectories in TEST_DIR
+  # No arguments passed, use all subdirectories in TEST_DIR (except logs and .theia)
   TEST_LIST=$(find "$TEST_DIR" -mindepth 1 -maxdepth 1 -type d)
+  TEST_LIST=$(echo "$TEST_LIST" | grep -v "logs" | grep -v ".theia")
 else
   # Arguments passed, verify they match subdirectories in TEST_DIR
   TEST_LIST=""

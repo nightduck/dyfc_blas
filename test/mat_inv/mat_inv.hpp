@@ -12,24 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "prefixsum.hpp"
+#ifndef DYFC_BLAS_TEST_MAT_INV_HPP
+#define DYFC_BLAS_TEST_MAT_INV_HPP
 
-#include "blas.hpp"
+#ifndef dimN
+#define dimN 64
+#endif
 
-// Test both the prefix sum calls
-void prefixsum(double x[dimN], double r[dimN]) {
-#pragma HLS DATAFLOW
-    
-  // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
-  // constructor
-  dyfc::blas::Vector<double> x_v(x, dimN);
-  dyfc::blas::Vector<double> r_v(dimN);
+// These are reference numbers for the benchmark, commenting them out will have no effect
+#define dimNSweepMin 64
+#define dimNSweepMax 8192
 
-  // Call a templated version of the blas function being tested
-  dyfc::blas::prefixsum<double>(dimN, x_v, r_v);
+void mat_inv(double x[dimN][dimN], double r[dimN][dimN]);
 
-  // Write the result back to the output array
-  r_v.to_memory(r);
-
-  return;
-}
+#endif  // DYFC_BLAS_TEST_MAT_INV_HPP

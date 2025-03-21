@@ -44,18 +44,33 @@ void axpy(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y, Vector<
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
+  assert(n == x.length());
+  assert(n == y.length());
+  assert(n == result.length());
+  assert(("This vector is a pure stream and only accepts one reader", x.read_lock()));
+  assert(("This vector is a pure stream and only accepts one reader", y.read_lock()));
+  assert(("This vector only accepts one writer", result.write_lock()));
 #endif
+  typename Vector<T, Par>::StreamType x_stream;
+  typename Vector<T, Par>::StreamType y_stream;
+  x.read(x_stream);
+  y.read(y_stream);
   for (unsigned int i = 0; i < n; i += Par) {
 #pragma HLS PIPELINE
     WideType<T, Par> r_val = T(0);
-    WideType<T, Par> x_val = x.read();
-    WideType<T, Par> y_val = y.read();
+    WideType<T, Par> x_val = x_stream.read();
+    WideType<T, Par> y_val = y_stream.read();
     for (int j = 0; j < Par; j++) {
 #pragma HLS UNROLL
       r_val[j] = alpha * x_val[j] + y_val[j];
     }
     result.write(r_val);
   }
+#ifndef __SYNTHESIS__
+  assert(("Vector x isn't empty", x.empty()));
+  assert(("Vector y isn't empty", y.empty()));
+  assert(("Vector result is empty", !result.empty()));
+#endif
 }
 
 template <typename T, const MajorOrder Order, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
@@ -65,17 +80,26 @@ void axpy(unsigned int n, unsigned int m, T alpha, Matrix<T, Order, Par> &x,
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
   assert((m % Par) == 0);
+  assert(n == x.rows());
+  assert(m == x.cols());
   assert(n == y.rows());
   assert(m == y.cols());
-  assert(x.rows() == y.rows());
-  assert(x.cols() == y.cols());
+  assert(n == result.rows());
+  assert(m == result.cols());
+  assert(("This matrix is a pure stream and only accepts one reader", x.read_lock()));
+  assert(("This matrix is a pure stream and only accepts one reader", y.read_lock()));
+  assert(("This matrix only accepts one writer", result.write_lock()));
 #endif
-  for (unsigned int i = 0; i < n; i++) {
-    for (unsigned int j = 0; j < m; j += Par) {
+  typename Matrix<T, Order, Par>::StreamType x_stream;
+  typename Matrix<T, Order, Par>::StreamType y_stream;
+  x.read(x_stream);
+  y.read(y_stream);
+  for (unsigned int i = 0; i < m; i++) {
+    for (unsigned int j = 0; j < n; j += Par) {
 #pragma HLS PIPELINE
       WideType<T, Par> r_val = T(0);
-      WideType<T, Par> x_val = x.read();
-      WideType<T, Par> y_val = y.read();
+      WideType<T, Par> x_val = x_stream.read();
+      WideType<T, Par> y_val = y_stream.read();
       for (int k = 0; k < Par; k++) {
 #pragma HLS UNROLL
         r_val[k] = alpha * x_val[k] + y_val[k];
@@ -83,6 +107,11 @@ void axpy(unsigned int n, unsigned int m, T alpha, Matrix<T, Order, Par> &x,
       result.write(r_val);
     }
   }
+#ifndef __SYNTHESIS__
+  assert(("Matrix x isn't empty", x.empty()));
+  assert(("Matrix y isn't empty", y.empty()));
+  assert(("Matrix result is empty", !result.empty()));
+#endif
 }
 
 }  // namespace blas

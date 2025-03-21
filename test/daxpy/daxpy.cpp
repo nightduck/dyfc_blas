@@ -29,7 +29,7 @@ void daxpy(double alpha, double x[dimN], double y[dimN], double r[dimN]) {
   dyfc::blas::axpy<double>(dimN, alpha, x_v, y_v, r_v);
 
   // Write the result back to the output array
-  r_v.write(r);
+  r_v.to_memory(r);
 
   return;
 }

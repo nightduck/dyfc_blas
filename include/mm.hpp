@@ -22,6 +22,9 @@
 namespace dyfc {
 namespace blas {
 
+// TODO: Explore requiring intermediate buffer depending on the permutation of matrix orders.
+// EG RowMajor * ColMajor can be done in stream, but RowMajor * RowMajor requires a buffer of N (or
+// M depending on the order of the output matrix), and ColMajor * RowMajor requires a buffer of M*N.
 /**
  * Performs matrix multiplication
  *
@@ -47,9 +50,11 @@ namespace blas {
  * @param[out] result The output matrix to write to.
  */
 template <typename T, const MajorOrder OrderA = RowMajor, const MajorOrder OrderB = ColMajor,
-          const UpperLower UpLo = Upper, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
-void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, OrderA, Par> &A,
-        Matrix<T, OrderB, Par> &B, Matrix<T, OrderA, Par> &result) {
+          const MajorOrder OrderC = RowMajor, const UpperLower UpLo = Upper,
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alpha,
+        Matrix<T, OrderA, Par> &A, Matrix<T, OrderB, Par> &B, Matrix<T, OrderA, Par> &result,
+        T *buffer = nullptr) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
@@ -61,49 +66,35 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Order
   assert(B.cols() == n);
   assert(result.rows() == m);
   assert(result.cols() == n);
+  assert(("This matrix is a pure stream and only accepts one reader", A.read_lock()));
+  assert(("This matrix is a pure stream and only accepts one reader", B.read_lock()));
+  assert(("This matrix only accepts one writer", result.write_lock()));
 #endif
 
+  typename Matrix<T, OrderA, Par>::StreamType A_stream;
+  typename Matrix<T, OrderB, Par>::StreamType B_stream;
   if (OrderA == RowMajor && OrderB == ColMajor) {
-    T r = T(0);
-    WideType<T, Par> r_out;
-    hls::stream<WideType<T, Par>> A_row_stream;
-    hls::stream<WideType<T, Par>> B_repeat_stream;
-    for (int i = 0; i < m; i++) {
-      for (int j = 0; j < n; j++) {
-        for (int p = 0; p < k; p += Par) {
-          WideType<T, Par> A_val;
-          WideType<T, Par> B_val;
-          if (j % Par == 0) {
-            r_out = 0;
-          }
-          if (j == 0) {
-            A_val = A.read();
-            A_row_stream.write(A_val);
-          } else if (j == n - 1) {
-            A_val = A_row_stream.read();
-          } else {
-            A_val = A_row_stream.read();
-            A_row_stream.write(A_val);
-          }
-          if (i == 0) {
-            B_val = B.read();
-            B_repeat_stream.write(B_val);
-          } else if (i == m - 1) {
-            B_val = B_repeat_stream.read();
-          } else {
-            B_val = B_repeat_stream.read();
-            B_repeat_stream.write(B_val);
-          }
+#pragma HLS DATAFLOW
+    A.read(A_stream, false, B.cols(), 1);
+    B.read(B_stream, false, 1, A.rows());
 
+    T r(0);
+    WideType<T, Par> r_out;
+    for (size_t i = 0; i < m; i++) {
+      for (size_t j = 0; j < n; j++) {
+        for (size_t l = 0; l < k; l += Par) {
+#pragma HLS PIPELINE
+          WideType<T, Par> a = A_stream.read();
+          WideType<T, Par> b = B_stream.read();
           WideType<T, Par> r_val;
           WideType<T, Par> rsum_val = T(0);
-          for (int s = 0; s < Par; s++) {
+          for (size_t p = 0; p < Par; p++) {
 #pragma HLS UNROLL
-            r_val[s] = A_val[s] * B_val[s];
+            r_val[p] = a[p] * b[p];
           }
           prefixsum<T, Par>(r_val, rsum_val, r);
           r = rsum_val[Par - 1];
-          if (p + Par >= k) {
+          if (l + Par >= k) {
             r_out[j % Par] = r;
             if (j % Par == Par - 1) {
               result.write(r_out * alpha);
@@ -113,20 +104,15 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Order
         }
       }
     }
-#ifndef __SYNTHESIS__
-    assert(A.empty());
-    assert(B.empty());
-    assert(A_row_stream.empty());
-    assert(B_repeat_stream.empty());
-    assert(result.size() == m * n / Par);
-#endif
   } else if (OrderA == ColMajor && OrderB == RowMajor) {
-// There shouldn't be any other option
+#ifndef __SYNTHESIS__
+    assert(("gemm with two row major order inputs hasn't been implemented yet", false));
+#endif
+  } else if (OrderA == RowMajor && OrderB == RowMajor) {
 #ifndef __SYNTHESIS__
     assert(("gemm with two row major order inputs hasn't been implemented yet", false));
 #endif
   } else if (OrderA == ColMajor && OrderB == ColMajor) {
-// There shouldn't be any other option
 #ifndef __SYNTHESIS__
     assert(("gemm with two column major order inputs hasn't been implemented yet", false));
 #endif
@@ -136,6 +122,13 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Order
     assert(("Invalid MajorOrder option (this shouldn't be possible, wtf did you do?)", false));
 #endif
   }
+#ifndef __SYNTHESIS__
+  assert(("Matrix A isn't empty", A.empty()));
+  assert(("Matrix isn't empty", B.empty()));
+  assert(("A_stream isn't empty", A_stream.empty()));
+  assert(("B_stream isn't empty", B_stream.empty()));
+  assert(("Matrix result is unexpected size", result.size() == m * n / Par));
+#endif
 }
 // TODO: Subtemplates for gemm, hemm, symm, trmm
 // TODO: Specific implementations for the standard: cgemm, dgemm, sgemm, zgemm,
@@ -169,10 +162,11 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Order
  * @param[out] result The output matrix to write to.
  */
 template <typename T, const MajorOrder OrderA = RowMajor, const MajorOrder OrderB = ColMajor,
-          const UpperLower UpLo = Upper, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
-void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, OrderA, Par> &A,
-        Matrix<T, OrderB, Par> &B, T beta, Matrix<T, OrderA, Par> &C,
-        Matrix<T, OrderA, Par> &result) {
+          const MajorOrder OrderC = RowMajor, const UpperLower UpLo = Upper,
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alpha,
+        Matrix<T, OrderA, Par> &A, Matrix<T, OrderB, Par> &B, T beta, Matrix<T, OrderC, Par> &C,
+        Matrix<T, OrderC, Par> &result, T *buffer = nullptr) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
@@ -190,7 +184,7 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Order
 
   if (OrderA != OrderB) {
     Matrix<T, OrderA, Par> AB(m, n);
-    mm(m, n, k, alpha, A, B, AB);
+    mm(m, n, k, alpha, A, B, AB, buffer);
     axpy(m, n, beta, C, AB, result);
 
 #ifndef __SYNTHESIS__
@@ -205,6 +199,12 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Order
     assert(("gemm with two matching major order inputs hasn't been implemented yet", false));
 #endif
   }
+#ifndef __SYNTHESIS__
+  assert(("Matrix isn't empty", A.empty()));
+  assert(("Matrix isn't empty", B.empty()));
+  assert(("Matrix isn't empty", C.empty()));
+  assert(("Matrix is empty", !result.empty()));
+#endif
 }
 // TODO: Subtemplates for gemm, hemm, symm, gemmtr
 // TODO: Specific implementations for the standard: cgemm, dgemm, sgemm, zgemm,

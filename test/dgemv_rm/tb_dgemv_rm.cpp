@@ -23,13 +23,7 @@
 #define RANDOM (double)(rand() % 100 - 50) / (double)(rand() % 100 + 1)
 
 bool approximatelyEqual(double a, double b, double epsilon) {
-  if (a > b) {
-    return (a / b) - 1 <= epsilon;
-  } else if (a < b) {
-    return (b / a) - 1 <= epsilon;
-  } else {
-    return true;
-  }
+  return (a == b) || std::abs(a/b - 1) <= epsilon;
 }
 
 void print_vector(double *v, int n) {
@@ -95,6 +89,11 @@ int main(int argc, char** argv) {
       break;
     }
   }
+
+  // // Print results
+  // for(int i = 0; i < dimN; i++) {
+  //   std::cout << "r[" << i << "] = " << r[i] << ", r_gold[" << i << "] = " << r_gold[i] << std::endl;
+  // }
 
   if (failed_index > -1) {
     std::cout << "FAILED TEST" << std::endl;

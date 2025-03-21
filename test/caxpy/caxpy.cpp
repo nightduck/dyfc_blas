@@ -17,6 +17,8 @@
 #include "blas.hpp"
 
 void caxpy(ComplexFloat alpha, ComplexFloat x[dimN], ComplexFloat y[dimN], ComplexFloat r[dimN]) {
+#pragma HLS DATAFLOW
+  
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
   // constructor
   dyfc::blas::Vector<ComplexFloat> x_v(x, dimN);
@@ -27,7 +29,7 @@ void caxpy(ComplexFloat alpha, ComplexFloat x[dimN], ComplexFloat y[dimN], Compl
   dyfc::blas::axpy<ComplexFloat>(dimN, alpha, x_v, y_v, r_v);
 
   // Write the result back to the output array
-  r_v.write(r);
+  r_v.to_memory(r);
 
   return;
 }

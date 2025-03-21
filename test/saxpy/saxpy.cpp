@@ -29,7 +29,7 @@ void saxpy(float alpha, float x[dimN], float y[dimN], float r[dimN]) {
   dyfc::blas::axpy<float>(dimN, alpha, x_v, y_v, r_v);
 
   // Write the result back to the output array
-  r_v.write(r);
+  r_v.to_memory(r);
 
   return;
 }
