@@ -57,8 +57,9 @@ class Vector {
   using StreamType = typename hls::stream<WideType<T, Par>>;
 
  protected:
-  StreamType stream_;
-  T *buffer_;
+  StreamType stream_;  // Stream of vector elements, elements are guaranteed to be sequential and
+                       // max depth is length_ / Par
+  T *buffer_;  // Buffer of vector elements in memory, elements are not guaranteed to be sequential
 
   const unsigned int length_;
 
@@ -315,6 +316,31 @@ unsigned int shape() {
   return length_;
 }
 
+/**
+ * Duplicates the vector stream into the provided vectors. This vector is unusable after calling
+ * this function.
+ *
+ * @param outputs The vectors to duplicate the vector into
+ */
+template <unsigned int Copies>
+void duplicate(Vector<T, Par> outputs[Copies]) {
+  StreamType writing_stream;
+  if (buffer_ == nullptr) {
+    writing_stream = stream_;
+  } else {  // Only included for completion. If this Vector has a buffer, why would you ever use
+            // this function?
+    read(writing_stream);
+  }
+  for (int i = 0; i < length_; i += Par) {
+#pragma HLS PIPELINE
+    WideType<T, Par> value = writing_stream.read();
+    for (int j = 0; j < Copies; j++) {
+#pragma HLS UNROLL
+      outputs[j].write(value);
+    }
+  }
+}
+
 // TODO: Add support for reshaping and slicing. With the former returning a
 // matrix potentially
 };  // namespace blas
@@ -336,8 +362,10 @@ class Matrix {
   using StreamType = typename hls::stream<WideType<T, Par>>;
 
  protected:
-  hls::stream<WideType<T, Par>> stream_;
-  T *buffer_;
+  StreamType stream_;  // Stream of matrix elements, elements are guaranteed to be sequential
+                       // (either in row or column order, according to template parameter) and max
+                       // depth is rows_ * cols_ / Par
+  T *buffer_;  // Buffer of matrix elements in memory, ordering is according to template parameter
 
   const unsigned int rows_;
   const unsigned int cols_;
@@ -819,6 +847,34 @@ class Matrix {
   std::pair<unsigned int, unsigned int> shape() {
 #pragma HLS INLINE
     return {rows_, cols_};
+  }
+
+  /**
+   * Duplicates the vector stream into the provided matrices. This vector is unusable after calling
+   * this function.
+   *
+   * @param outputs The matrices to duplicate the vector into
+   */
+  template <unsigned int Copies>
+  void duplicate(Matrix<T, Order, Par> outputs[Copies]) {
+    StreamType writing_stream;
+    if (buffer_ == nullptr) {
+      writing_stream = stream_;
+    } else {  // Only included for completion. If this Vector has a buffer, why would you ever use
+              // this function?
+      read(writing_stream);
+    }
+    for (int i = 0; i < rows_; i += Par) {
+      for (int j = 0; j < cols_; j += Par) {
+#pragma HLS LOOP_FLATTEN
+#pragma HLS PIPELINE
+        WideType<T, Par> value = writing_stream.read();
+        for (int k = 0; k < Copies; k++) {
+#pragma HLS UNROLL
+          outputs[k].write(value);
+        }
+      }
+    }
   }
 
   // TODO: Add support for reshaping and slicing. With the former returning a
