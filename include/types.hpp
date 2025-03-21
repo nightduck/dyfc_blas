@@ -33,13 +33,13 @@ template <typename T, unsigned int Par>
 using WideType = hls::vector<T, Par>;
 
 // NOTE: A design decision was made to include the vector and matrix dimensions as class members
-// instead of template parameters. This is because the functions that will accept vectors and
-// matrices as arguments would also need to specify the dimensions as template arguments, which
-// creates multiple compiled implementations of the same function. While different implementations
-// may be needed for different levels of parallelism, a block capable of processing a 128x128 matrix
-// should also be able to process a 1024x1024 matrix. for the same operation. Removing the template
-// parameters from said function allows for a single implementation to be used for all argument
-// sizes.
+//    instead of template parameters. This is because the functions that will accept vectors and
+//    matrices as arguments would also need to specify the dimensions as template arguments, which
+//    creates multiple compiled implementations of the same function. While different
+//    implementations may be needed for different levels of parallelism, a block capable of
+//    processing a 128x128 matrix should also be able to process a 1024x1024 matrix. for the same
+//    operation. Removing the template parameters from said function allows for a single
+//    implementation to be used for all argument sizes.
 
 constexpr size_t log2(size_t n) { return ((n < 2) ? 0 : 1 + log2(n / 2)); }
 
