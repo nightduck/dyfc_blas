@@ -17,7 +17,7 @@ fi
 # Get the list of command line arguments
 if [ "$#" -eq 0 ]; then
   # No arguments passed, use the default test list
-  TEST_LIST="daxpy ddot dgemv_rm dgemv_cm prefixsum dgemm_rc"
+  TEST_LIST="daxpy ddot dgemv_rm dgemv_cm prefixsum dgemm_rcr dgemm_rcc"
   TEST_LIST=$(echo "$TEST_LIST" | sed "s~[^ ]*~$TEST_DIR/&~g")
 else
   # Arguments passed, verify they match subdirectories in TEST_DIR

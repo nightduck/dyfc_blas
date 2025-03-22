@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DYFC_BLAS_TEST_DGEMM_RC_HPP
-#define DYFC_BLAS_TEST_DGEMM_RC_HPP
+#ifndef DYFC_BLAS_TEST_DGEMM_RCR_HPP
+#define DYFC_BLAS_TEST_DGEMM_RCR_HPP
 
 #ifndef dimN
 #define dimN 256
@@ -33,6 +33,6 @@
 #define dimKSweepMin 64
 #define dimKSweepMax 2048
 
-void dgemm_rc(double alpha, double A[dimM][dimK], double B[dimN][dimK], double beta, double C[dimM][dimN], double r[dimM][dimN]);
+void dgemm_rcr(double alpha, double A[dimM][dimK], double B[dimN][dimK], double beta, double C[dimM][dimN], double r[dimM][dimN]);
 
-#endif  // DYFC_BLAS_TEST_DGEMM_RC_HPP
+#endif  // DYFC_BLAS_TEST_DGEMM_RCR_HPP

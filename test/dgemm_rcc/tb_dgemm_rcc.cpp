@@ -18,7 +18,7 @@
 #include <cstdlib>
 
 #include "blas.hpp"
-#include "dgemm_rc.hpp"
+#include "dgemm_rcc.hpp"
 
 #define RANDOM (double)(rand() % 100 - 50) / (double)(rand() % 100 + 1)
 
@@ -49,9 +49,9 @@ int main(int argc, char** argv) {
   double A[dimM][dimK];
   double B[dimN][dimK];   // B is stored in col-major order
   double beta;
-  double C[dimM][dimN];
-  double r[dimM][dimN];
-  double r_gold[dimM][dimN];
+  double C[dimN][dimM];  // C is stored in col-major order
+  double r[dimN][dimM];  // r is stored in col-major order
+  double r_gold[dimN][dimM];  // r_gold is stored in col-major order
 
   // Initialize variables with random floats
   srand(0xDEADBEEF);
@@ -62,30 +62,30 @@ int main(int argc, char** argv) {
       A[i][j] = RANDOM;
     }
   }
-  for (int i = 0; i < dimK; i++) {
-    for (int j = 0; j < dimN; j++) {
+  for (int i = 0; i < dimN; i++) {
+    for (int j = 0; j < dimK; j++) {
       B[i][j] = RANDOM;
     }
   }
-  for (int i = 0; i < dimM; i++) {
-    for (int j = 0; j < dimN; j++) {
+  for (int i = 0; i < dimN; i++) {
+    for (int j = 0; j < dimM; j++) {
       C[i][j] = RANDOM;
     }
   }
 
   // Compute the correct result to compare against
-  for (int i = 0; i < dimM; i++) {
-    for (int j = 0; j < dimN; j++) {
+  for (int i = 0; i < dimN; i++) {
+    for (int j = 0; j < dimM; j++) {
       r_gold[i][j] = beta * C[i][j];
       for (int k = 0; k < dimK; k++) {
-        r_gold[i][j] += alpha * A[i][k] * B[j][k];
+        r_gold[i][j] += alpha * A[j][k] * B[i][k];
       }
     }
   }
   
 
   // Make call to kernel
-  dgemm_rc(alpha, A, B, beta, C, r);
+  dgemm_rcc(alpha, A, B, beta, C, r);
 
   // Verify results. Due to potential floating point error, we need to use an approximate comparison
   int failed_index = -1;
