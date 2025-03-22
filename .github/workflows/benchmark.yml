@@ -1,0 +1,52 @@
+name: Benchmark
+
+# This workflow will only run when manually triggered
+on:
+  workflow_dispatch:
+    # Optional inputs that can be specified when triggering the workflow
+    inputs:
+      pr_number:
+        description: 'Pull Request Number'
+        required: true
+      benchmark_type:
+        description: 'Type of benchmark to run'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - quick
+          - custom
+
+# Limit who can run this workflow
+permissions:
+  # Only allow users with write access to run this workflow
+  contents: write
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    
+    container:
+      # Using the same container as your tests
+      image: xilinx/vitis-hls:2023.1
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: refs/pull/${{ github.event.inputs.pr_number }}/merge
+    
+    - name: Run benchmarks
+      run: |
+        chmod +x ./benchmark.sh
+        ./benchmark.sh -p ${{ github.event.inputs.benchmark_type }}
+    
+    # Optional: Upload benchmark results as artifacts
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v3
+      with:
+        name: benchmark-results
+        path: |
+          benchmark-results/
+          *.log
+        retention-days: 14 

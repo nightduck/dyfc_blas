@@ -10,11 +10,14 @@
 PARALLEL=false
 while getopts "p" opt; do
   case $opt in
-    p) PARALLEL=true ;;
-    \?) echo "Invalid option -$OPTARG" >&2; exit 1 ;;
+  p) PARALLEL=true ;;
+  \?)
+    echo "Invalid option -$OPTARG" >&2
+    exit 1
+    ;;
   esac
 done
-shift $((OPTIND-1))
+shift $((OPTIND - 1))
 
 # Directory containing the tests
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/test" && pwd)"
@@ -49,7 +52,7 @@ fi
 run_test() {
   local TEST="$1"
   local SIZE="$2"
-  
+
   if [ ! -d "$TEST" ]; then
     return
   fi
@@ -113,6 +116,15 @@ run_test() {
         # Edit hls_config.cfg with the current m,n,k values in the format
         echo "tb.cflags=-D dimK=$K -D dimM=$M -D dimN=$N" >>"$CONFIG_FILE"
         echo "syn.cflags=-D dimK=$K -D dimM=$M -D dimN=$N" >>"$CONFIG_FILE"
+
+        # TODO: Have a flag that lets each size permutation of each test run in parallel. They would go into
+        # different folders, eg build64:64:64, build64:64:128, etc. This line (which is 99% of the compute time)
+        # would need to go into a different bash function. You would also need to deal with each size permutation
+        # writing to the same csv file. Maybe have the lines below return the line they're contributing to the csv
+        # file and this function will aggregate them. It can submit multiple jobs to the background, one for each
+        # size permutation. It will wait on the output of each job in order to aggregate the results. Meanwhile,
+        # other tests that also called this function would be submitting their own jobs to run. Something in this script
+        # has to set a limit on how many jobs can run in parallel and coordinate everything.
 
         # Run the v++ command
         (cd "$TEST" && v++ -c --mode hls --config "$CONFIG_FILE" --work_dir $TEST/build >/dev/null 2>&1)
