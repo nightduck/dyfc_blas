@@ -1,0 +1,28 @@
+---
+Checks: >
+  bugprone-*,
+  google-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -modernize-use-trailing-return-type,
+  -google-readability-namespace-comments
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*'
+FormatStyle: google
+CheckOptions:
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.FunctionCase
+    value: CamelCase
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+  - key: readability-identifier-naming.ConstantCase
+    value: UPPER_CASE
+  - key: google-readability-braces-around-statements.ShortStatementLines
+    value: '1'
+  - key: google-readability-function-size.StatementThreshold
+    value: '800'
+  - key: readability-implicit-bool-conversion.AllowIntegerConditions
+    value: '1' 
