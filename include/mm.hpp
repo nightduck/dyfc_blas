@@ -76,11 +76,10 @@ void mm_impl(const unsigned int m, const unsigned int n, const unsigned int k, T
       }
     }
   }
-#ifndef __SYNTHESIS__
-  assert(("A_stream isn't empty", A_stream.empty()));
-  assert(("B_stream isn't empty", B_stream.empty()));
-  assert(("Matrix result is empty", !result.empty()));
-#endif
+
+  ASSERT(A_stream.empty(), "A_stream isn't empty");
+  ASSERT(B_stream.empty(), "B_stream isn't empty");
+  ASSERT(!result.empty(), "Matrix result is empty");
 }
 
 /**
@@ -106,33 +105,31 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
         Matrix<T, RowMajor, Par> &A, Matrix<T, ColMajor, Par> &B, Matrix<T, RowMajor, Par> &result,
         T *buffer = nullptr) {
 #pragma HLS INLINE
-#ifndef __SYNTHESIS__
-  assert((n % Par) == 0);
-  assert((m % Par) == 0);
-  assert((k % Par) == 0);
-  assert(A.rows() == m);
-  assert(A.cols() == k);
-  assert(B.rows() == k);
-  assert(B.cols() == n);
-  assert(result.rows() == m);
-  assert(result.cols() == n);
-  assert(("This matrix is a pure stream and only accepts one reader", A.read_lock()));
-  assert(("This matrix is a pure stream and only accepts one reader", B.read_lock()));
-  assert(("This matrix only accepts one writer", result.write_lock()));
-#endif
+  ASSERT((n % Par) == 0, "n must be a multiple of Par");
+  ASSERT((m % Par) == 0, "m must be a multiple of Par");
+  ASSERT((k % Par) == 0, "k must be a multiple of Par");
+  ASSERT(A.rows() == m, "A.rows() must be equal to m");
+  ASSERT(A.cols() == k, "A.cols() must be equal to k");
+  ASSERT(B.rows() == k, "B.rows() must be equal to k");
+  ASSERT(B.cols() == n, "B.cols() must be equal to n");
+  ASSERT(result.rows() == m, "result.rows() must be equal to m");
+  ASSERT(result.cols() == n, "result.cols() must be equal to n");
+  ASSERT(A.read_lock(), "This matrix is a pure stream and only accepts one reader");
+  ASSERT(B.read_lock(), "This matrix is a pure stream and only accepts one reader");
+  ASSERT(result.write_lock(), "This matrix only accepts one writer");
+
   typename Matrix<T, RowMajor, Par>::StreamType A_stream;
   typename Matrix<T, ColMajor, Par>::StreamType B_stream;
   A.read(A_stream, false, B.cols(), 1);
   B.read(B_stream, false, 1, A.rows());
 
   mm_impl<T, RowMajor, Par>(m, n, k, alpha, A_stream, B_stream, result);
-#ifndef __SYNTHESIS__
-  assert(("Matrix A isn't empty", A.empty()));
-  assert(("Matrix B isn't empty", B.empty()));
-  assert(("Matrix result is empty", !result.empty()));
-  assert(("A_stream isn't empty", A_stream.empty()));
-  assert(("B_stream isn't empty", B_stream.empty()));
-#endif
+
+  ASSERT(A.empty(), "Matrix A isn't empty");
+  ASSERT(B.empty(), "Matrix B isn't empty");
+  ASSERT(!result.empty(), "Matrix result is empty");
+  ASSERT(A_stream.empty(), "A_stream isn't empty");
+  ASSERT(B_stream.empty(), "B_stream isn't empty");
 }
 
 /**
@@ -159,31 +156,29 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
         Matrix<T, RowMajor, Par> &A, Matrix<T, ColMajor, Par> &B, Matrix<T, ColMajor, Par> &result,
         T *buffer = nullptr) {
 #pragma HLS INLINE
-#ifndef __SYNTHESIS__
-  assert((n % Par) == 0);
-  assert((m % Par) == 0);
-  assert((k % Par) == 0);
-  assert(A.rows() == m);
-  assert(A.cols() == k);
-  assert(B.rows() == k);
-  assert(B.cols() == n);
-  assert(result.rows() == m);
-  assert(result.cols() == n);
-  assert(("This matrix is a pure stream and only accepts one reader", A.read_lock()));
-  assert(("This matrix is a pure stream and only accepts one reader", B.read_lock()));
-  assert(("This matrix only accepts one writer", result.write_lock()));
-#endif
+  ASSERT((n % Par) == 0, "n must be a multiple of Par");
+  ASSERT((m % Par) == 0, "m must be a multiple of Par");
+  ASSERT((k % Par) == 0, "k must be a multiple of Par");
+  ASSERT(A.rows() == m, "A.rows() must be equal to m");
+  ASSERT(A.cols() == k, "A.cols() must be equal to k");
+  ASSERT(B.rows() == k, "B.rows() must be equal to k");
+  ASSERT(B.cols() == n, "B.cols() must be equal to n");
+  ASSERT(result.rows() == m, "result.rows() must be equal to m");
+  ASSERT(result.cols() == n, "result.cols() must be equal to n");
+  ASSERT(A.read_lock(), "This matrix is a pure stream and only accepts one reader");
+  ASSERT(B.read_lock(), "This matrix is a pure stream and only accepts one reader");
+  ASSERT(result.write_lock(), "This matrix only accepts one writer");
+
   typename Matrix<T, RowMajor, Par>::StreamType A_stream;
   typename Matrix<T, ColMajor, Par>::StreamType B_stream;
   B.read(B_stream, false, A.rows(), 1);
   A.read(A_stream, false, 1, B.cols());
   mm_impl<T, ColMajor, Par>(n, m, k, alpha, B_stream, A_stream, result);
-#ifndef __SYNTHESIS__
-  assert(("Matrix A isn't empty", A.empty()));
-  assert(("Matrix B isn't empty", B.empty()));
-  assert(("Matrix result is empty", !result.empty()));
-  assert(("Matrix result is unexpected size", result.size() == m * n / Par));
-#endif
+
+  ASSERT(A.empty(), "Matrix A isn't empty");
+  ASSERT(B.empty(), "Matrix B isn't empty");
+  ASSERT(!result.empty(), "Matrix result is empty");
+  ASSERT(result.size() == m * n / Par, "Matrix result is unexpected size");
 }
 
 /**
@@ -219,43 +214,35 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
         Matrix<T, OrderA, Par> &A, Matrix<T, OrderB, Par> &B, T beta, Matrix<T, OrderC, Par> &C,
         Matrix<T, OrderC, Par> &result, T *buffer = nullptr) {
 #pragma HLS INLINE
-#ifndef __SYNTHESIS__
-  assert((n % Par) == 0);
-  assert((m % Par) == 0);
-  assert((k % Par) == 0);
-  assert(A.rows() == m);
-  assert(A.cols() == k);
-  assert(B.rows() == k);
-  assert(B.cols() == n);
-  assert(C.rows() == m);
-  assert(C.cols() == n);
-  assert(result.rows() == m);
-  assert(result.cols() == n);
-#endif
+  ASSERT((n % Par) == 0, "n must be a multiple of Par");
+  ASSERT((m % Par) == 0, "m must be a multiple of Par");
+  ASSERT((k % Par) == 0, "k must be a multiple of Par");
+  ASSERT(A.rows() == m, "A.rows() must be equal to m");
+  ASSERT(A.cols() == k, "A.cols() must be equal to k");
+  ASSERT(B.rows() == k, "B.rows() must be equal to k");
+  ASSERT(B.cols() == n, "B.cols() must be equal to n");
+  ASSERT(C.rows() == m, "C.rows() must be equal to m");
+  ASSERT(C.cols() == n, "C.cols() must be equal to n");
+  ASSERT(result.rows() == m, "result.rows() must be equal to m");
+  ASSERT(result.cols() == n, "result.cols() must be equal to n");
 
   if (OrderA != OrderB) {
     Matrix<T, OrderC, Par> AB(m, n);
     mm(m, n, k, alpha, A, B, AB, buffer);
     axpy(m, n, beta, C, AB, result);
 
-#ifndef __SYNTHESIS__
-    assert(A.empty());
-    assert(B.empty());
-    assert(C.empty());
-    assert(AB.empty());
-#endif
+    ASSERT(A.empty(), "Matrix A isn't empty");
+    ASSERT(B.empty(), "Matrix B isn't empty");
+    ASSERT(C.empty(), "Matrix C isn't empty");
+    ASSERT(AB.empty(), "Matrix AB isn't empty");
   } else {
-// There shouldn't be any other option
-#ifndef __SYNTHESIS__
-    assert(("gemm with two matching major order inputs hasn't been implemented yet", false));
-#endif
+    // There shouldn't be any other option
+    ASSERT(false, "gemm with two matching major order inputs hasn't been implemented yet");
   }
-#ifndef __SYNTHESIS__
-  assert(("Matrix isn't empty", A.empty()));
-  assert(("Matrix isn't empty", B.empty()));
-  assert(("Matrix isn't empty", C.empty()));
-  assert(("Matrix is empty", !result.empty()));
-#endif
+  ASSERT(A.empty(), "Matrix A isn't empty");
+  ASSERT(B.empty(), "Matrix B isn't empty");
+  ASSERT(C.empty(), "Matrix C isn't empty");
+  ASSERT(!result.empty(), "Matrix result is empty");
 }
 // TODO: Subtemplates for gemm, hemm, symm, gemmtr
 // TODO: Specific implementations for the standard: cgemm, dgemm, sgemm, zgemm,

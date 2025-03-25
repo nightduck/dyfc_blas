@@ -43,25 +43,22 @@ namespace blas {
  * @param[in]  buffer A buffer of size m to store the intermediate results of the
  */
 template <typename T, const MajorOrder Order = RowMajor,
-          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T),
-          const unsigned int Par2 = Par>
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T), const unsigned int Par2 = Par>
 void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Par> &A,
         Vector<T, Par> &x, Vector<T, Par2> &result, T *buffer = nullptr) {
 #pragma HLS INLINE
-#ifndef __SYNTHESIS__
-  assert((n % Par) == 0);
-  assert((m % Par) == 0);
-  assert((m % Par2) == 0);
-  assert(n == A.cols());
-  assert(m == A.rows());
-  assert(n == x.length());
-  assert(m == result.length());
-  assert(("This matrix is a pure stream and only accepts one reader", A.read_lock()));
-  assert(("This vector is a pure stream and only accepts one reader", x.read_lock()));
-  assert(("This vector only accepts one writer", result.write_lock()));
-  assert(("If A is ColMajor, a buffer of size M must be provided",
-          Order == RowMajor || buffer != nullptr));
-#endif
+  ASSERT((n % Par) == 0, "n must be a multiple of Par");
+  ASSERT((m % Par) == 0, "m must be a multiple of Par");
+  ASSERT((m % Par2) == 0, "m must be a multiple of Par2");
+  ASSERT(n == A.cols(), "n must be equal to the number of columns of A");
+  ASSERT(m == A.rows(), "m must be equal to the number of rows of A");
+  ASSERT(n == x.length(), "n must be equal to the length of x");
+  ASSERT(m == result.length(), "m must be equal to the length of result");
+  ASSERT(A.read_lock(), "This matrix is a pure stream and only accepts one reader");
+  ASSERT(x.read_lock(), "This vector is a pure stream and only accepts one reader");
+  ASSERT(result.write_lock(), "This vector only accepts one writer");
+  ASSERT(Order == RowMajor || buffer != nullptr,
+         "If A is ColMajor, a buffer of size M must be provided");
   typename Matrix<T, Order, Par>::StreamType A_stream;
   typename Vector<T, Par>::StreamType x_stream;
   A.read(A_stream);
@@ -133,7 +130,7 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
             }
           } else {
             for (int l = 0; l < Par; l++) {
-#pragma HLS UNROLL factor=Par2
+#pragma HLS UNROLL factor = Par2
               rout_val[(k + l) % Par2] = r_val[l];
               if ((k + l) % Par2 == Par2 - 1) {
                 result.write(rout_val);
@@ -144,17 +141,13 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
       }
     }
   } else {
-// There shouldn't be any other option
-#ifndef __SYNTHESIS__
-    assert(("Invalid MajorOrder option (this shouldn't be possible, wtf did you do?)", false));
-#endif
+    // There shouldn't be any other option
+    ASSERT(false, "Invalid MajorOrder option (this shouldn't be possible, wtf did you do?)");
   }
 
-#ifndef __SYNTHESIS__
-  assert(("Matrix A isn't empty", A.empty()));
-  assert(("Vector x isn't empty", x.empty()));
-  assert(("Vector result is empty", !result.empty()));
-#endif
+  ASSERT(A.empty(), "Matrix A isn't empty");
+  ASSERT(x.empty(), "Vector x isn't empty");
+  ASSERT(!result.empty(), "Vector result is empty");
 }
 // TODO: Subtemplate for trmv, tbmv, tpmv
 // TODO: Specific implementations for the standard: strmv, dtrmv, ctrmv, ztrmv,
@@ -182,33 +175,29 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
  * @param[out] result The output vector to write to.
  */
 template <typename T, const MajorOrder Order = RowMajor,
-          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T),
-          const unsigned int Par2 = Par>
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T), const unsigned int Par2 = Par>
 void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Par> &A,
-        Vector<T, Par> &x, T beta, Vector<T, Par> &y, Vector<T, Par2> &result, T *buffer = nullptr) {
+        Vector<T, Par> &x, T beta, Vector<T, Par> &y, Vector<T, Par2> &result,
+        T *buffer = nullptr) {
 #pragma HLS INLINE
-#ifndef __SYNTHESIS__
-  assert((n % Par) == 0);
-  assert((m % Par) == 0);
-  assert(n == A.cols());
-  assert(m == A.rows());
-  assert(n == x.length());
-  assert(m == y.length());
-  assert(m == result.length());
-  assert(("If A is ColMajor, a buffer of size M must be provided",
-          Order == RowMajor || buffer != nullptr));
-#endif
+  ASSERT((n % Par) == 0, "n must be a multiple of Par");
+  ASSERT((m % Par) == 0, "m must be a multiple of Par");
+  ASSERT(n == A.cols(), "n must be equal to the number of columns of A");
+  ASSERT(m == A.rows(), "m must be equal to the number of rows of A");
+  ASSERT(n == x.length(), "n must be equal to the length of x");
+  ASSERT(m == y.length(), "m must be equal to the length of y");
+  ASSERT(m == result.length(), "m must be equal to the length of result");
+  ASSERT(Order == RowMajor || buffer != nullptr,
+         "If A is ColMajor, a buffer of size M must be provided");
   Vector<T, Par> Ax(m);
   mv<T, Order, Par, Par2>(m, n, alpha, A, x, Ax, buffer);
   axpy<T, Par>(m, beta, y, Ax, result);
 
-#ifndef __SYNTHESIS__
-  assert(("Matrix A isn't empty", A.empty()));
-  assert(("Vector x isn't empty", x.empty()));
-  assert(("Vector y isn't empty", y.empty()));
-  assert(("Intermediary vector Ax isn't empty", Ax.empty()));
-  assert(("Vector result is empty", !result.empty()));
-#endif
+  ASSERT(A.empty(), "Matrix A isn't empty");
+  ASSERT(x.empty(), "Vector x isn't empty");
+  ASSERT(y.empty(), "Vector y isn't empty");
+  ASSERT(Ax.empty(), "Intermediary vector Ax isn't empty");
+  ASSERT(!result.empty(), "Vector result is empty");
 }
 // TODO: Subtemplates for gemv, hemv, symv, gbmv, hbmv, sbmv, hpmv, spmv
 // TODO: Specific implementations for the standard: cgemv, dgemv, sgemv, zgemv,

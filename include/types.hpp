@@ -84,10 +84,8 @@ class Vector {
 #endif
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
-#ifndef __SYNTHESIS__
-    assert(("length must be greater than 0", length > 0));
-    assert(("length must be a multiple of Par", length % Par == 0));
-#endif
+    ASSERT(length > 0, "length must be greater than 0");
+    ASSERT(length % Par == 0, "length must be a multiple of Par");
   }
 
   /**
@@ -104,10 +102,8 @@ class Vector {
 #endif
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
-#ifndef __SYNTHESIS__
-    assert(("length must be greater than 0", length > 0));
-    assert(("length must be a multiple of Par", length % Par == 0));
-#endif
+    ASSERT(length > 0, "length must be greater than 0");
+    ASSERT(length % Par == 0, "length must be a multiple of Par");
     for (size_t i = 0; i < length; i += Par) {
 #pragma HLS PIPELINE
       WideType<T, Par> value;
@@ -138,25 +134,21 @@ class Vector {
 #pragma HLS INLINE
 #pragma HLS ARRAY_PARTITION variable = in_array type = cyclic factor = Par
 #pragma HLS STREAM variable = stream_ depth = 0
-            static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
-#ifndef __SYNTHESIS__
-  assert(("length must be greater than 0", length > 0));
-  assert(("length must be a multiple of Par", length % Par == 0));
-#endif
+    static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
+    ASSERT(length > 0, "length must be greater than 0");
+    ASSERT(length % Par == 0, "length must be a multiple of Par");
 }
 
 ~Vector() {
-#ifndef __SYNTHESIS__
-  assert(("Vector stream is not empty", stream_.empty()));
-#endif
+  ASSERT(stream_.empty(), "Vector stream is not empty");
 }
 
-#ifndef __SYNTHESIS__
 /**
  * Registers a writer for the vector. Does nothing if the vector has a buffer
  */
 bool write_lock() {
 #pragma HLS INLINE
+#ifndef __SYNTHESIS__
   if (buffer_ == nullptr) {
     if (num_writers_ == 0) {
       num_writers_++;
@@ -165,6 +157,7 @@ bool write_lock() {
       return false;
     }
   }
+#endif
   return true;
 }
 
@@ -173,6 +166,7 @@ bool write_lock() {
  */
 bool read_lock() {
 #pragma HLS INLINE
+#ifndef __SYNTHESIS__
   if (buffer_ == nullptr) {
     if (num_readers_ == 0) {
       num_readers_++;
@@ -181,9 +175,9 @@ bool read_lock() {
       return false;
     }
   }
+#endif
   return true;
 }
-#endif
 
 /**
  * Writes to the underlying stream
@@ -192,12 +186,8 @@ bool read_lock() {
  */
 void write(WideType<T, Par> value) {
 #pragma HLS INLINE
-#ifndef __SYNTHESIS__
-  assert(
-      ("An input buffer has been provided for this vector. No additional "
-       "input is accepted",
-       buffer_ == nullptr));
-#endif
+  ASSERT(buffer_ == nullptr, "An input buffer has been provided for this vector. No additional "
+                             "input is accepted");
   stream_.write(value);
 }
 
@@ -217,13 +207,12 @@ void write(WideType<T, Par> value) {
 void read(StreamType &stream, int repeat_elements = 1, int repeat_vector = 1) {
 // TODO: Explore getting rid of repeat elements. It kind fucks up performance
 // unless we can guarantee it's a power of 2
-#ifndef __SYNTHESIS__
-  assert(("repeat_elements must be at least 1", repeat_elements > 0));
-  assert(("repeat_vector must be at least 1", repeat_vector > 0));
+  ASSERT(repeat_elements > 0, "repeat_elements must be at least 1");
+  ASSERT(repeat_vector > 0, "repeat_vector must be at least 1");
 
   // TODO: For now only sequential reads are supported
-  assert(("repeat_elements is not supported yet, must be left default", repeat_elements == 1));
-#endif
+  ASSERT(repeat_elements == 1, "repeat_elements is not supported yet, must be left default");
+
   if (buffer_ == nullptr) {
     StreamType repeat_stream;
 #pragma HLS STREAM variable = repeat_stream depth = length_ / Par
@@ -393,15 +382,13 @@ class Matrix {
 #endif
 #pragma HLS INLINE
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
-#ifndef __SYNTHESIS__
-    assert(("Rows must be greater than 0", Rows > 0));
-    assert(("Cols must be greater than 0", Cols > 0));
+    ASSERT(Rows > 0, "Rows must be greater than 0");
+    ASSERT(Cols > 0, "Cols must be greater than 0");
     if (Order == RowMajor) {
-      assert(("Cols must be a multiple of Par", Cols % Par == 0));
+      ASSERT(Cols % Par == 0, "Cols must be a multiple of Par");
     } else {
-      assert(("Rows must be a multiple of Par", Rows % Par == 0));
+      ASSERT(Rows % Par == 0, "Rows must be a multiple of Par");
     }
-#endif
   }
 
   /**
@@ -419,15 +406,14 @@ class Matrix {
       : stream_(), buffer_(nullptr), rows_(Rows), cols_(Cols) {
 #endif
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
-#ifndef __SYNTHESIS__
-    assert(("Rows must be greater than 0", Rows > 0));
-    assert(("Cols must be greater than 0", Cols > 0));
+    ASSERT(Rows > 0, "Rows must be greater than 0");
+    ASSERT(Cols > 0, "Cols must be greater than 0");
     if (Order == RowMajor) {
-      assert(("Cols must be a multiple of Par", Cols % Par == 0));
+      ASSERT(Cols % Par == 0, "Cols must be a multiple of Par");
     } else {
-      assert(("Rows must be a multiple of Par", Rows % Par == 0));
+      ASSERT(Rows % Par == 0, "Rows must be a multiple of Par");
     }
-#endif
+
     for (size_t i = 0; i < Rows; i++) {
       for (size_t j = 0; j < Cols; j += Par) {
 #pragma HLS PIPELINE
@@ -460,15 +446,13 @@ class Matrix {
 #pragma HLS ARRAY_PARTITION variable = buffer type = cyclic factor = Par
 #pragma HLS STREAM variable = stream_ depth = 0
     static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
-#ifndef __SYNTHESIS__
-    assert(("Rows must be greater than 0", Rows > 0));
-    assert(("Cols must be greater than 0", Cols > 0));
+    ASSERT(Rows > 0, "Rows must be greater than 0");
+    ASSERT(Cols > 0, "Cols must be greater than 0");
     if (Order == RowMajor) {
-      assert(("Cols must be a multiple of Par", Cols % Par == 0));
+      ASSERT(Cols % Par == 0, "Cols must be a multiple of Par");
     } else {
-      assert(("Rows must be a multiple of Par", Rows % Par == 0));
+      ASSERT(Rows % Par == 0, "Rows must be a multiple of Par");
     }
-#endif
     buffer_ = buffer;
   }
 
@@ -492,17 +476,15 @@ class Matrix {
   }
 
   ~Matrix() {
-#ifndef __SYNTHESIS__
-    assert(("Matrix stream is not empty", stream_.empty()));
-#endif
+    ASSERT(stream_.empty(), "Matrix stream is not empty");
   }
 
-#ifndef __SYNTHESIS__
   /**
    * Registers a writer for the matrix. Does nothing if the matrix has a buffer
    */
   bool write_lock() {
 #pragma HLS INLINE
+#ifndef __SYNTHESIS__
     if (buffer_ == nullptr) {
       if (num_writers_ == 0) {
         num_writers_++;
@@ -511,6 +493,7 @@ class Matrix {
         return false;
       }
     }
+#endif
     return true;
   }
 
@@ -519,6 +502,7 @@ class Matrix {
    */
   bool read_lock() {
 #pragma HLS INLINE
+#ifndef __SYNTHESIS__
     if (buffer_ == nullptr) {
       if (num_readers_ == 0) {
         num_readers_++;
@@ -527,9 +511,9 @@ class Matrix {
         return false;
       }
     }
+#endif
     return true;
   }
-#endif
 
   /**
    * Writes to the underlying stream
@@ -538,12 +522,8 @@ class Matrix {
    */
   void write(WideType<T, Par> value) {
 #pragma HLS INLINE
-#ifndef __SYNTHESIS__
-    assert(
-        ("An input buffer has been provided for this matrix. No additional "
-         "input is accepted",
-         buffer_ == nullptr));
-#endif
+    ASSERT(buffer_ == nullptr, "An input buffer has been provided for this matrix. No additional "
+                               "input is accepted");
     stream_.write(value);
   }
 
@@ -560,33 +540,24 @@ class Matrix {
    */
   void read(StreamType &stream, const bool repeat_elements = false, const int repeat_row = 1,
             const int repeat_matrix = 1) {
-#ifndef __SYNTHESIS__
-    assert(
-        ("repeat_elements is not supported yet, must be left default", repeat_elements == false));
-    assert(("repeat_row must be at least 1", repeat_row > 0));
-    assert(("repeat_matrix must be at least 1", repeat_matrix > 0));
-#endif
+    ASSERT(!repeat_elements, "repeat_elements is not supported yet, must be left default");
+    ASSERT(repeat_row > 0, "repeat_row must be at least 1");
+    ASSERT(repeat_matrix > 0, "repeat_matrix must be at least 1");
+
     if (buffer_ == nullptr) {
       // TODO: Implement reordering from sequential stream. For now it ignores
       // the parameters and does a sequential read
 
-#ifndef __SYNTHESIS__
-      assert(
-          ("Pure stream matrices only support sequential reads for now. "
+      ASSERT(repeat_elements == false, "Pure stream matrices only support sequential reads for now. "
            "repeat_elements must remain "
-           "default value",
-           repeat_elements == false));
-      assert(
-          ("Pure stream matrices only support sequential reads for now. "
+           "default value");
+      ASSERT(repeat_row == 1, "Pure stream matrices only support sequential reads for now. "
            "repeat_row must remain "
-           "default value",
-           repeat_row == 1));
-      assert(
-          ("Pure stream matrices only support sequential reads for now. "
+           "default value");
+      ASSERT(repeat_matrix == 1, "Pure stream matrices only support sequential reads for now. "
            "repeat_matrix must remain "
-           "default value",
-           repeat_matrix == 1));
-#endif
+           "default value");
+
       for (int i = 0; i < rows_; i++) {
         for (int j = 0; j < cols_; j += Par) {
           stream.write(stream_.read());
@@ -628,11 +599,8 @@ class Matrix {
         }
       }
 
-#ifndef __SYNTHESIS__
-
-      assert(("Output stream is unexpected length",
-              stream.size() == rows_ * cols_ * repeat_matrix * repeat_row / Par));
-#endif
+      ASSERT(stream.size() == rows_ * cols_ * repeat_matrix * repeat_row / Par,
+             "Output stream is unexpected length");
     }
   }
 
@@ -688,12 +656,9 @@ class Matrix {
    * size 2*N*N
    */
   bool invert(Matrix<T, Order, Par> &result, T *buffer) {
-#ifndef __SYNTHESIS__
-    assert(("Matrix is not square", rows_ == cols_));
-    assert(("Provided matrix does not match dimensions of this matrix",
-            result.rows() == rows_ && result.cols() == cols_));
-    assert(("Must provide buffer of size 2*M*N", buffer != nullptr));
-#endif
+    ASSERT(rows_ == cols_, "Matrix is not square");
+    ASSERT(result.rows() == rows_ && result.cols() == cols_, "Provided matrix does not match dimensions of this matrix");
+    ASSERT(buffer != nullptr, "Must provide buffer of size 2*M*N");
 
   LOOP_invert_primary_outer_loop:
     for (int i = 0; i < rows_; i++) {
@@ -789,9 +754,7 @@ class Matrix {
       }
     }
 
-#ifndef __SYNTHESIS__
-    assert(("Internal stream isn't empty after matrix inversion", stream_.empty()));
-#endif
+    ASSERT(stream_.empty(), "Internal stream isn't empty after matrix inversion");
     return true;
   }
 
@@ -1042,9 +1005,7 @@ class HermitianBandedMatrix : public BandedMatrix<T, Diagonals, Diagonals, Par> 
  */
 template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void transpose(Matrix<T, ColMajor, Par> &A, Matrix<T, RowMajor, Par> &AT) {
-#ifndef __SYNTHESIS__
-  assert(("Dimensions of A and AT must match", A.rows() == AT.cols() && A.cols() == AT.rows()));
-#endif
+  ASSERT(A.rows() == AT.cols() && A.cols() == AT.rows(), "Dimensions of A and AT must match");
 #pragma HLS DATAFLOW
   typename Matrix<T, ColMajor, Par>::StreamType stream;
   A.read(stream);
@@ -1070,9 +1031,7 @@ void transpose(Matrix<T, ColMajor, Par> &A, Matrix<T, RowMajor, Par> &AT) {
  */
 template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void transpose(Matrix<T, RowMajor, Par> &A, Matrix<T, ColMajor, Par> &AT) {
-#ifndef __SYNTHESIS__
-  assert(("Dimensions of A and AT must match", A.rows() == AT.cols() && A.cols() == AT.rows()));
-#endif
+  ASSERT(A.rows() == AT.cols() && A.cols() == AT.rows(), "Dimensions of A and AT must match");
 #pragma HLS DATAFLOW
   typename Matrix<T, RowMajor, Par>::StreamType stream;
   A.read(stream);

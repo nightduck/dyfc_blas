@@ -39,11 +39,9 @@ namespace blas {
 template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void asum(unsigned int n, Vector<T, Par> &x, T &result) {
 #pragma HLS INLINE
-#ifndef __SYNTHESIS__
-  assert((n % Par) == 0);
-  assert(n == x.length());
-  assert(("This vector is a pure stream and only accepts one reader", x.read_lock()));
-#endif
+  ASSERT((n % Par) == 0, "n must be a multiple of Par");
+  ASSERT(n == x.length(), "n must be equal to the length of x");
+  ASSERT(x.read_lock(), "This vector is a pure stream and only accepts one reader");
   typename Vector<T, Par>::StreamType x_stream;
   x.read(x_stream);
   WideType<T, Par> x_val;
@@ -63,9 +61,7 @@ void asum(unsigned int n, Vector<T, Par> &x, T &result) {
     r = r_val[Par - 1];
   }
   result = r;
-#ifndef __SYNTHESIS__
-  assert(("Vector x isn't empty", x.empty()));
-#endif
+  ASSERT(x.empty(), "Vector x isn't empty");
 }
 // TODO: Specific implementations for the standard: sasum, dasum scasum, dzasum
 
