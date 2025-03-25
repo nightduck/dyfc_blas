@@ -40,15 +40,18 @@ namespace blas {
  * @param[in]  A The input matrix to multiply.
  * @param[in]  x The input vector to multiply.
  * @param[out] result The output vector to write to.
+ * @param[in]  buffer A buffer of size m to store the intermediate results of the
  */
 template <typename T, const MajorOrder Order = RowMajor,
-          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T),
+          const unsigned int Par2 = Par>
 void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Par> &A,
-        Vector<T, Par> &x, Vector<T, Par> &result, T *buffer = nullptr) {
+        Vector<T, Par> &x, Vector<T, Par2> &result, T *buffer = nullptr) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
   assert((m % Par) == 0);
+  assert((m % Par2) == 0);
   assert(n == A.cols());
   assert(m == A.rows());
   assert(n == x.length());
@@ -65,7 +68,7 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
   if (Order == RowMajor) {
     x.read(x_stream, 1, A.rows());
     T r = 0;
-    WideType<T, Par> r_out;
+    WideType<T, Par2> r_out;
   LOOP_gemv_rm:
     for (int i = 0; i < m; i++) {
       for (int j = 0; j < n; j += Par) {
@@ -83,8 +86,8 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
         prefixsum<T, Par>(r_val, rsum_val, r);
         r = rsum_val[Par - 1];
         if (j + Par >= n) {
-          r_out[i % Par] = r;
-          if (i % Par == Par - 1) {
+          r_out[i % Par2] = r;
+          if (i % Par2 == Par2 - 1) {
             result.write(r_out);
           }
           r = T(0);
@@ -97,6 +100,7 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
     //     WideType<T, Par> ring_buffer[m / Par];
     // #pragma HLS ARRAY_PARTITION variable=ring_buffer complete dim=1
     WideType<T, Par> v_val = T(0);
+    WideType<T, Par2> rout_val;
 
   LOOP_gemv_cm:
     for (size_t i = 0; i < n; i += Par) {
@@ -118,18 +122,23 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
             v_val = x_stream.read();
           }
         LOOP_gemv_cm_inner:
-          for (int l = 0; l < Par; l++) {
+          for (int s = 0; s < Par; s++) {
 #pragma HLS UNROLL
-            r_val[l] = alpha * m_val[l] * v_val[j] + rr_val[l];
+            r_val[s] = alpha * m_val[s] * v_val[j] + rr_val[s];
           }
           if (i + j < n - 1) {
-            // ring_buffer_stream.write(r_val);
             for (int l = 0; l < Par; l++) {
 #pragma HLS UNROLL
               buffer[k + l] = r_val[l];
             }
           } else {
-            result.write(r_val);
+            for (int l = 0; l < Par; l++) {
+#pragma HLS UNROLL factor=Par2
+              rout_val[(k + l) % Par2] = r_val[l];
+              if ((k + l) % Par2 == Par2 - 1) {
+                result.write(rout_val);
+              }
+            }
           }
         }
       }
@@ -173,9 +182,10 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
  * @param[out] result The output vector to write to.
  */
 template <typename T, const MajorOrder Order = RowMajor,
-          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T),
+          const unsigned int Par2 = Par>
 void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Par> &A,
-        Vector<T, Par> &x, T beta, Vector<T, Par> &y, Vector<T, Par> &result, T *buffer = nullptr) {
+        Vector<T, Par> &x, T beta, Vector<T, Par> &y, Vector<T, Par2> &result, T *buffer = nullptr) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
@@ -189,7 +199,7 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
           Order == RowMajor || buffer != nullptr));
 #endif
   Vector<T, Par> Ax(m);
-  mv<T, Order, Par>(m, n, alpha, A, x, Ax, buffer);
+  mv<T, Order, Par, Par2>(m, n, alpha, A, x, Ax, buffer);
   axpy<T, Par>(m, beta, y, Ax, result);
 
 #ifndef __SYNTHESIS__
