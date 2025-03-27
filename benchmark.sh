@@ -12,7 +12,13 @@ PARALLEL_JOBS=$(nproc)
 while getopts "p:" opt; do
   case $opt in
   p) PARALLEL=true
-     PARALLEL_JOBS=${OPTARG:-$(nproc)} ;;
+     if [[ "$OPTARG" =~ ^[0-9]+$ ]]; then
+       PARALLEL_JOBS=$OPTARG
+     else
+       echo "Invalid number: $OPTARG" >&2
+       echo "-p must be followed by a positive integer" >&2
+       exit 1
+     fi ;;
   \?)
     echo "Invalid option -$OPTARG" >&2
     exit 1
@@ -21,12 +27,12 @@ while getopts "p:" opt; do
 done
 shift $((OPTIND - 1))
 
-# Clean up temp directory, in case a prior run of this script was interrupted
-rm -rf "$WORKSPACE_DIR/temp"
-
 # Directory containing the tests
 # TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/test" && pwd)"
 WORKSPACE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Clean up temp directory, in case a prior run of this script was interrupted
+rm -rf "$WORKSPACE_DIR/temp"
 
 # Check if Vitis is sourced
 if ! command -v v++ &>/dev/null; then
@@ -79,15 +85,6 @@ run_test() {
   # Edit hls_config.cfg with the current m,n,k values in the format
   echo "tb.cflags=-D dimK=$K -D dimM=$M -D dimN=$N" >>"$CONFIG_FILE"
   echo "syn.cflags=-D dimK=$K -D dimM=$M -D dimN=$N" >>"$CONFIG_FILE"
-
-  # TODO: Have a flag that lets each size permutation of each test run in parallel. They would go into
-  # different folders, eg build64:64:64, build64:64:128, etc. This line (which is 99% of the compute time)
-  # would need to go into a different bash function. You would also need to deal with each size permutation
-  # writing to the same csv file. Maybe have the lines below return the line they're contributing to the csv
-  # file and this function will aggregate them. It can submit multiple jobs to the background, one for each
-  # size permutation. It will wait on the output of each job in order to aggregate the results. Meanwhile,
-  # other tests that also called this function would be submitting their own jobs to run. Something in this script
-  # has to set a limit on how many jobs can run in parallel and coordinate everything.
 
   # Run the v++ command
   (cd "$TEMP_DIR" && v++ -c --mode hls --config "$CONFIG_FILE" --work_dir $TEMP_DIR/build >/dev/null 2>&1)
@@ -152,9 +149,9 @@ run_test() {
 
     # Write the extracted values to the benchmark file
     if ([ -z "$issue_type" ]); then
-      echo "$M,$N,$K,$latency_cycles,$latency_ns,$bram,$dsp,$ff,$lut,$uram" >>"$WORKSPACE_DIR"/benchmarks/"$TEST_NAME".csv
+      echo "$M,$N,$K,$latency_cycles,$latency_ns,$bram,$dsp,$ff,$lut,$uram" >> $TEMP_DIR/output.txt
     else
-      echo "$M,$N,$K,$issue_type" >>"$WORKSPACE_DIR"/benchmarks/"$TEST_NAME".csv
+      echo "$M,$N,$K,$issue_type" >> $TEMP_DIR/output.txt
     fi
   else
     echo "!! csynth.rpt not found for $TEST_NAME."
@@ -167,9 +164,6 @@ run_test() {
   if tail -n 1 "$CONFIG_FILE" | grep -q "tb.cflags=-D dimK=$K -D dimM=$M -D dimN=$N"; then
     sed -i '$d' "$CONFIG_FILE"
   fi
-
-  # Remove the temp directory
-  rm -rf "$TEMP_DIR"
 }
 
 # Create benchmarks directory if it doesn't exist, and clear it if it does
@@ -227,6 +221,8 @@ for i in "${!TEST_ARRAY[@]}"; do
   # Create csv file to store the results
   echo "M,N,K,Latency (cycles),Latency (ns),BRAM,DSP,FF,LUT,URAM" >"$WORKSPACE_DIR"/benchmarks/"$TEST_NAME".csv
 
+  test_outputs=()
+  i=0
   M=$M_MIN
   while [ "$M" -le "$M_MAX" ]; do
     N=$N_MIN
@@ -235,9 +231,9 @@ for i in "${!TEST_ARRAY[@]}"; do
       while [ "$K" -le "$K_MAX" ]; do
         echo "$TEST_NAME: M=$M, N=$N, K=$K"
 
-
         if [ "$PARALLEL" = true ]; then
           run_test "$TEST_NAME" "$M:$N:$K" &
+          i=$((i + 1))
           if (( $(jobs -r | wc -l) >= PARALLEL_JOBS )); then
             wait -n
           fi
@@ -252,8 +248,12 @@ for i in "${!TEST_ARRAY[@]}"; do
     done
     M=$((M * 2))
   done
-  echo "Waiting for all jobs to finish"
+  echo "Waiting for rest of $TEST_NAME jobs to finish"
   wait
+
+  for d in $(ls -1v "$WORKSPACE_DIR"/temp | grep "$TEST_NAME"); do
+    cat "$WORKSPACE_DIR/temp/$d/output.txt" >>"$WORKSPACE_DIR"/benchmarks/"$TEST_NAME".csv
+  done
 done
 
 # Remove the temp directory
