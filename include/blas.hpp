@@ -15,6 +15,7 @@
 #ifndef DYFC_BLAS_HPP
 #define DYFC_BLAS_HPP
 
+#include "assert.hpp"
 #include "complex.hpp"
 #include "types.hpp"
 // #include "prototypes.hpp"
