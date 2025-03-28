@@ -15,11 +15,11 @@ jobs:
     - name: Install linting tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang-format-18 clang-tidy
+        sudo apt-get install -y clang-format-17 clang-tidy
     
     - name: Check formatting
       run: |
-        find . -type f -regex '.*\.\(inl\|cpp\|h\|hpp\|cc\|c\|cxx\)' | xargs clang-format-18 -style=file -n -Werror
+        find . -type f -regex '.*\.\(inl\|cpp\|h\|hpp\|cc\|c\|cxx\)' | xargs clang-format-17 -style=file -n -Werror
     
     - name: Run clang-tidy
       run: |
