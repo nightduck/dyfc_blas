@@ -119,11 +119,14 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
   assert(("This matrix is a pure stream and only accepts one reader", A.read_lock()));
   assert(("This matrix is a pure stream and only accepts one reader", B.read_lock()));
   assert(("This matrix only accepts one writer", result.write_lock()));
+  assert(("When A and B are pure streams, a buffer of size n*(m+1) must be provided", A.is_buffered() || B.is_buffered() || buffer != nullptr));
+  assert(("When B is a pure stream, a buffer of size m*n must be provided", B.is_buffered() || buffer != nullptr));
+  assert(("When A is a pure stream, a buffer of size n must be provided", A.is_buffered() || buffer != nullptr));
 #endif
   typename Matrix<T, RowMajor, Par>::StreamType A_stream;
   typename Matrix<T, ColMajor, Par>::StreamType B_stream;
-  A.read(A_stream, false, B.cols(), 1);
-  B.read(B_stream, false, 1, A.rows());
+  A.read(A_stream, false, B.cols(), 1, buffer);
+  B.read(B_stream, false, 1, A.rows(), buffer + (A.is_buffered() ? 0 : n));
 
   mm_impl<T, RowMajor, Par>(m, n, k, alpha, A_stream, B_stream, result);
 #ifndef __SYNTHESIS__
@@ -175,8 +178,8 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
 #endif
   typename Matrix<T, RowMajor, Par>::StreamType A_stream;
   typename Matrix<T, ColMajor, Par>::StreamType B_stream;
-  B.read(B_stream, false, A.rows(), 1);
-  A.read(A_stream, false, 1, B.cols());
+  B.read(B_stream, false, A.rows(), 1, buffer);
+  A.read(A_stream, false, 1, B.cols(), buffer + (B.is_buffered() ? 0 : m));
   mm_impl<T, ColMajor, Par>(n, m, k, alpha, B_stream, A_stream, result);
 #ifndef __SYNTHESIS__
   assert(("Matrix A isn't empty", A.empty()));
@@ -216,8 +219,8 @@ template <typename T, const MajorOrder OrderA = RowMajor, const MajorOrder Order
           const MajorOrder OrderC = RowMajor, const UpperLower UpLo = Upper,
           const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T), const unsigned int Par2 = Par>
 void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alpha,
-        Matrix<T, OrderA, Par> &A, Matrix<T, OrderB, Par> &B, T beta, Matrix<T, OrderC, Par> &C,
-        Matrix<T, OrderC, Par> &result, T *buffer = nullptr) {
+        Matrix<T, OrderA, Par> &A, Matrix<T, OrderB, Par> &B, T beta, Matrix<T, OrderC, Par2> &C,
+        Matrix<T, OrderC, Par2> &result, T *buffer = nullptr) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);

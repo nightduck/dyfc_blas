@@ -214,7 +214,7 @@ void write(WideType<T, Par> value) {
  *
  * @return A WideType containing the next Par elements from the stream.
  */
-void read(StreamType &stream, int repeat_elements = 1, int repeat_vector = 1) {
+void read(StreamType &stream, int repeat_elements = 1, int repeat_vector = 1, T *buffer = nullptr) {
 // TODO: Explore getting rid of repeat elements. It kind fucks up performance
 // unless we can guarantee it's a power of 2
 #ifndef __SYNTHESIS__
@@ -272,6 +272,16 @@ void to_memory(T *out_array) {
       out_array[i + j] = value[j];
     }
   }
+}
+
+/**
+ * Checks if the vector has a buffer
+ *
+ * @return True if the vector has a buffer, false otherwise.
+ */
+bool is_buffered() {
+#pragma HLS INLINE
+  return buffer_ != nullptr;
 }
 
 /**
@@ -559,7 +569,7 @@ class Matrix {
    * @param repeat_matrix Number of times to repeat the entire matrix
    */
   void read(StreamType &stream, const bool repeat_elements = false, const int repeat_row = 1,
-            const int repeat_matrix = 1) {
+            const int repeat_matrix = 1, T *buffer = nullptr) {
 #ifndef __SYNTHESIS__
     assert(
         ("repeat_elements is not supported yet, must be left default", repeat_elements == false));
@@ -576,22 +586,37 @@ class Matrix {
            "repeat_elements must remain "
            "default value",
            repeat_elements == false));
-      assert(
-          ("Pure stream matrices only support sequential reads for now. "
-           "repeat_row must remain "
-           "default value",
-           repeat_row == 1));
-      assert(
-          ("Pure stream matrices only support sequential reads for now. "
-           "repeat_matrix must remain "
-           "default value",
-           repeat_matrix == 1));
 #endif
-      for (int i = 0; i < rows_; i++) {
-        for (int j = 0; j < cols_; j += Par) {
-          stream.write(stream_.read());
+
+      for (int i = 0; i < repeat_matrix; i++) {
+        for (int j = 0; j < rows_; j++) {
+          for (int k = 0; k < repeat_row; k++) {
+            for (int l = 0; l < cols_; l += Par) {
+              WideType<T, Par> value;
+              if (k == 0 && i == 0) {
+                value = stream_.read();
+                if ((repeat_matrix > 1) || (repeat_row > 1)) {
+                  for (int m = 0; m < Par; m++) {
+#pragma HLS UNROLL
+                    buffer_[j * cols_ + l + m] = value[m];
+                  }
+                }
+              } else {
+                for (int m = 0; m < Par; m++) {
+#pragma HLS UNROLL
+                  value[m] = buffer_[((repeat_matrix == 1) ? 0 : j * cols_) + l + m];
+                }
+              }
+              stream.write(value);
+            }
+          }
         }
       }
+      // for(int i = 0; i < rows_; i++) {
+      //   for (int j = 0; j < cols_; j += Par) {
+      //     stream.write(stream_.read());
+      //   }
+      // }
     } else {
       if (Order == RowMajor) {
         for (int i = 0; i < repeat_matrix; i++) {
