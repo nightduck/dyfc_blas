@@ -24,7 +24,7 @@ namespace blas {
 
 template <typename T>
 class Complex {
-public:
+ public:
   T real;
   T imag;
 
@@ -128,7 +128,7 @@ public:
   }
 };
 
-template<typename T>
+template <typename T>
 std::ostream& operator<<(std::ostream& os, const Complex<T>& c) {
   os << c.real << " + " << c.imag << "i";
   return os;

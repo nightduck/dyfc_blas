@@ -28,8 +28,7 @@ void cgemv_rm(ComplexFloat alpha, ComplexFloat A[dimM][dimN], ComplexFloat x[dim
   dyfc::blas::Vector<ComplexFloat> r_v(dimM);
 
   // Call a templated version of the blas function being tested
-  dyfc::blas::mv<ComplexFloat, dyfc::blas::RowMajor>(dimM, dimN, alpha, A_m, x_v, beta, y_v,
-                                                           r_v);
+  dyfc::blas::mv<ComplexFloat, dyfc::blas::RowMajor>(dimM, dimN, alpha, A_m, x_v, beta, y_v, r_v);
 
   // Write the result back to the output array
   r_v.to_memory(r);

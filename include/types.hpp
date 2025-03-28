@@ -134,9 +134,9 @@ class Vector {
 #pragma HLS INLINE
 #pragma HLS ARRAY_PARTITION variable = in_array type = cyclic factor = Par
 #pragma HLS STREAM variable = stream_ depth = 0
-    static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
-    ASSERT(length > 0, "length must be greater than 0");
-    ASSERT(length % Par == 0, "length must be a multiple of Par");
+            static_assert(Par % 1 << log2(Par) == 0, "Par must be a power of 2");
+  ASSERT(length > 0, "length must be greater than 0");
+  ASSERT(length % Par == 0, "length must be a multiple of Par");
 }
 
 ~Vector() {
@@ -186,8 +186,9 @@ bool read_lock() {
  */
 void write(WideType<T, Par> value) {
 #pragma HLS INLINE
-  ASSERT(buffer_ == nullptr, "An input buffer has been provided for this vector. No additional "
-                             "input is accepted");
+  ASSERT(buffer_ == nullptr,
+         "An input buffer has been provided for this vector. No additional "
+         "input is accepted");
   stream_.write(value);
 }
 
@@ -205,8 +206,8 @@ void write(WideType<T, Par> value) {
  * @return A WideType containing the next Par elements from the stream.
  */
 void read(StreamType &stream, int repeat_elements = 1, int repeat_vector = 1, T *buffer = nullptr) {
-// TODO: Explore getting rid of repeat elements. It kind fucks up performance
-// unless we can guarantee it's a power of 2
+  // TODO: Explore getting rid of repeat elements. It kind fucks up performance
+  // unless we can guarantee it's a power of 2
   ASSERT(repeat_elements > 0, "repeat_elements must be at least 1");
   ASSERT(repeat_vector > 0, "repeat_vector must be at least 1");
 
@@ -485,9 +486,7 @@ class Matrix {
     return *this;
   }
 
-  ~Matrix() {
-    ASSERT(stream_.empty(), "Matrix stream is not empty");
-  }
+  ~Matrix() { ASSERT(stream_.empty(), "Matrix stream is not empty"); }
 
   /**
    * Registers a writer for the matrix. Does nothing if the matrix has a buffer
@@ -532,8 +531,9 @@ class Matrix {
    */
   void write(WideType<T, Par> value) {
 #pragma HLS INLINE
-    ASSERT(buffer_ == nullptr, "An input buffer has been provided for this matrix. No additional "
-                               "input is accepted");
+    ASSERT(buffer_ == nullptr,
+           "An input buffer has been provided for this matrix. No additional "
+           "input is accepted");
     stream_.write(value);
   }
 
@@ -558,9 +558,10 @@ class Matrix {
       // TODO: Implement reordering from sequential stream. For now it ignores
       // the parameters and does a sequential read
 
-      ASSERT(repeat_elements == false, "Pure stream matrices only support sequential reads for now. "
-           "repeat_elements must remain "
-           "default value");
+      ASSERT(repeat_elements == false,
+             "Pure stream matrices only support sequential reads for now. "
+             "repeat_elements must remain "
+             "default value");
 
       for (int i = 0; i < repeat_matrix; i++) {
         for (int j = 0; j < rows_; j++) {
@@ -685,7 +686,8 @@ class Matrix {
    */
   bool invert(Matrix<T, Order, Par> &result, T *buffer) {
     ASSERT(rows_ == cols_, "Matrix is not square");
-    ASSERT(result.rows() == rows_ && result.cols() == cols_, "Provided matrix does not match dimensions of this matrix");
+    ASSERT(result.rows() == rows_ && result.cols() == cols_,
+           "Provided matrix does not match dimensions of this matrix");
     ASSERT(buffer != nullptr, "Must provide buffer of size 2*M*N");
 
   LOOP_invert_primary_outer_loop:
@@ -791,9 +793,7 @@ class Matrix {
    *
    * @return True if the matrix has a buffer, false otherwise.
    */
-  bool is_buffered() {
-    return buffer_ != nullptr;
-  }
+  bool is_buffered() { return buffer_ != nullptr; }
 
   /**
    * Checks if the underlying stream is empty

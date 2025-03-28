@@ -28,6 +28,7 @@
 #define dimMSweepMin 128
 #define dimMSweepMax 4096
 
-void sgemv_rm(float alpha, float A[dimM][dimN], float x[dimN], float beta, float y[dimN], float r[dimN]);
+void sgemv_rm(float alpha, float A[dimM][dimN], float x[dimN], float beta, float y[dimN],
+              float r[dimN]);
 
 #endif  // DYFC_BLAS_TEST_SGEMV_RM_HPP

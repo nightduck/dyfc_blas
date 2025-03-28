@@ -23,7 +23,7 @@
 #define RANDOM (float)(rand() % 100 - 50) / (float)(rand() % 100 + 1)
 
 bool approximatelyEqual(float a, float b, double epsilon) {
-  return (a == b) || std::abs(a/b - 1) <= epsilon;
+  return (a == b) || std::abs(a / b - 1) <= epsilon;
 }
 
 void print_vector(float *v, int n) {
@@ -44,7 +44,7 @@ void print_matrix(float *A, int m, int n) {
   printf("\n");
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   float alpha;
   float A[dimN][dimM];
   float x[dimN];

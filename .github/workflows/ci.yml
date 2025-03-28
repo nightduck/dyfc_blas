@@ -19,7 +19,7 @@ jobs:
     
     - name: Check formatting
       run: |
-        find . -name '*.cpp' -o -name '*.hpp' | xargs clang-format --style=Google -n -Werror
+        find . -type f -regex '.*\.\(inl\|cpp\|h\|hpp\|cc\|c\|cxx\)' | xargs clang-format-14 -style=file -n -Werror
     
     - name: Run clang-tidy
       run: |

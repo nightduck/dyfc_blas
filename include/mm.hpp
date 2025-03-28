@@ -47,8 +47,8 @@ namespace blas {
  */
 template <typename T, const MajorOrder Order, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void mm_impl(const unsigned int m, const unsigned int n, const unsigned int k, T alpha,
-               hls::stream<WideType<T, Par>> &A_stream, hls::stream<WideType<T, Par>> &B_stream,
-               Matrix<T, Order, Par> &result) {
+             hls::stream<WideType<T, Par>> &A_stream, hls::stream<WideType<T, Par>> &B_stream,
+             Matrix<T, Order, Par> &result) {
 #pragma HLS INLINE
   T r(0);
   WideType<T, Par> r_out;
@@ -117,9 +117,12 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
   ASSERT(A.read_lock(), "This matrix is a pure stream and only accepts one reader");
   ASSERT(B.read_lock(), "This matrix is a pure stream and only accepts one reader");
   ASSERT(result.write_lock(), "This matrix only accepts one writer");
-  ASSERT(A.is_buffered() || B.is_buffered() || buffer != nullptr, "When A and B are pure streams, a buffer of size n*(m+1) must be provided");
-  ASSERT(B.is_buffered() || buffer != nullptr, "When B is a pure stream, a buffer of size m*n must be provided");
-  ASSERT(A.is_buffered() || buffer != nullptr, "When A is a pure stream, a buffer of size n must be provided");
+  ASSERT(A.is_buffered() || B.is_buffered() || buffer != nullptr,
+         "When A and B are pure streams, a buffer of size n*(m+1) must be provided");
+  ASSERT(B.is_buffered() || buffer != nullptr,
+         "When B is a pure stream, a buffer of size m*n must be provided");
+  ASSERT(A.is_buffered() || buffer != nullptr,
+         "When A is a pure stream, a buffer of size n must be provided");
   typename Matrix<T, RowMajor, Par>::StreamType A_stream;
   typename Matrix<T, ColMajor, Par>::StreamType B_stream;
   A.read(A_stream, false, B.cols(), 1, buffer);
@@ -170,9 +173,12 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
   ASSERT(A.read_lock(), "This matrix is a pure stream and only accepts one reader");
   ASSERT(B.read_lock(), "This matrix is a pure stream and only accepts one reader");
   ASSERT(result.write_lock(), "This matrix only accepts one writer");
-  ASSERT(A.is_buffered() || B.is_buffered() || buffer != nullptr, "When A and B are pure streams, a buffer of size n*(m+1) must be provided");
-  ASSERT(A.is_buffered() || buffer != nullptr, "When A is a pure stream, a buffer of size m*n must be provided");
-  ASSERT(B.is_buffered() || buffer != nullptr, "When B is a pure stream, a buffer of size n must be provided");
+  ASSERT(A.is_buffered() || B.is_buffered() || buffer != nullptr,
+         "When A and B are pure streams, a buffer of size n*(m+1) must be provided");
+  ASSERT(A.is_buffered() || buffer != nullptr,
+         "When A is a pure stream, a buffer of size m*n must be provided");
+  ASSERT(B.is_buffered() || buffer != nullptr,
+         "When B is a pure stream, a buffer of size n must be provided");
 
   typename Matrix<T, RowMajor, Par>::StreamType A_stream;
   typename Matrix<T, ColMajor, Par>::StreamType B_stream;
@@ -214,8 +220,7 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
  */
 template <typename T, const MajorOrder OrderA = RowMajor, const MajorOrder OrderB = ColMajor,
           const MajorOrder OrderC = RowMajor, const UpperLower UpLo = Upper,
-          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T),
-          const unsigned int Par2 = Par>
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T), const unsigned int Par2 = Par>
 void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alpha,
         Matrix<T, OrderA, Par> &A, Matrix<T, OrderB, Par> &B, T beta, Matrix<T, OrderC, Par2> &C,
         Matrix<T, OrderC, Par2> &result, T *buffer = nullptr) {

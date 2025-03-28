@@ -18,18 +18,18 @@
 
 void mat_inv(double x[dimN][dimN], double r[dimN][dimN]) {
 #pragma HLS DATAFLOW
-    
+
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
   // constructor
   dyfc::blas::Matrix<double> x_m(FLATTEN_MATRIX(x), dimN, dimN);
   dyfc::blas::Matrix<double> r_m(dimN, dimN);
-  double buffer[dimN][2*dimN];
+  double buffer[dimN][2 * dimN];
 
   // Call a templated version of the blas function being tested
   bool result = x_m.invert(r_m, FLATTEN_MATRIX(buffer));
-  #ifndef __SYNTHESIS__
+#ifndef __SYNTHESIS__
   assert(("Matrix inversion failed", result == true));
-  #endif
+#endif
 
   // Write the result back to the output array
   r_m.to_memory(FLATTEN_MATRIX(r));

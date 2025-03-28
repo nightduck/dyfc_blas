@@ -16,7 +16,8 @@
 
 #include "blas.hpp"
 
-void dgemm_rcc(double alpha, double A[dimM][dimK], double B[dimN][dimK], double beta, double C[dimN][dimM], double r[dimN][dimM]) {
+void dgemm_rcc(double alpha, double A[dimM][dimK], double B[dimN][dimK], double beta,
+               double C[dimN][dimM], double r[dimN][dimM]) {
 #pragma HLS DATAFLOW
 
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
@@ -27,7 +28,8 @@ void dgemm_rcc(double alpha, double A[dimM][dimK], double B[dimN][dimK], double 
   dyfc::blas::Matrix<double, dyfc::blas::ColMajor> r_m(dimM, dimN);
 
   // Call a templated version of the blas function being tested
-  dyfc::blas::mm<double, dyfc::blas::RowMajor, dyfc::blas::ColMajor, dyfc::blas::ColMajor>(dimM, dimN, dimK, alpha, A_m, B_m, beta, C_m, r_m);
+  dyfc::blas::mm<double, dyfc::blas::RowMajor, dyfc::blas::ColMajor, dyfc::blas::ColMajor>(
+      dimM, dimN, dimK, alpha, A_m, B_m, beta, C_m, r_m);
 
   // Write the result back to the output array
   r_m.to_memory(FLATTEN_MATRIX(r));

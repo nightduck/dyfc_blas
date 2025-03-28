@@ -251,8 +251,8 @@ void rotg(Complex<T> a, Complex<T> b, T &c, Complex<T> &s, Complex<T> &r);
  * @param[out] yr The y coordinates of the rotated points
  */
 template <typename T, unsigned int Par>
-void rot(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &y, T &c, T &s,
-         Vector<T, Par> &xr, Vector<T, Par> &yr);
+void rot(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &y, T &c, T &s, Vector<T, Par> &xr,
+         Vector<T, Par> &yr);
 template <typename T, unsigned int Par>
 void rot(unsigned int n, Vector<Complex<T>, Par> &x, Vector<Complex<T>, Par> &y, T &c,
          Complex<T> &s, Vector<Complex<T>, Par> &xr, Vector<Complex<T>, Par> &yr);
@@ -371,9 +371,9 @@ void rotm(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &y, WideType<T, 5> &
  * @param[in]  y The input vector to add to the result.
  * @param[out] result The output vector to write to.
  */
-template <typename T, unsigned int Par, MajorOrder Order=RowMajor>
-void mv(unsigned int m, unsigned int n, T alpha, Matrix<T, Par, Order> &A, Vector<T, Par> &x, T beta,
-        Vector<T, Par> &y, Vector<T, Par> &result);
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor>
+void mv(unsigned int m, unsigned int n, T alpha, Matrix<T, Par, Order> &A, Vector<T, Par> &x,
+        T beta, Vector<T, Par> &y, Vector<T, Par> &result);
 // TODO: Subtemplates for gemv, hemv, symv, gbmv, hbmv, sbmv, hpmv, spmv
 // TODO: Specific implementations for the standard: cgemv, dgemv, sgemv, zgemv,
 // chemv, zhemv,
@@ -406,7 +406,7 @@ void mv(unsigned int m, unsigned int n, T alpha, Matrix<T, Par, Order> &A, Vecto
  * @param[in]  y The input vector to add to the result.
  * @param[out] result The output vector to write to.
  */
-template <typename T, unsigned int Par, MajorOrder Order=RowMajor>
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor>
 void mv(unsigned int m, unsigned int n, T alpha, Matrix<T, Par, Order> &A, Vector<T, Par> &x,
         Vector<T, Par> &result);
 // TODO: Subtemplate for trmv, tbmv, tpmv
@@ -430,8 +430,7 @@ void mv(unsigned int m, unsigned int n, T alpha, Matrix<T, Par, Order> &A, Vecto
  * @param[in]  x The input vector to multiply.
  * @param[out] result The output vector to write to.
  */
-template <typename T, unsigned int Par, MajorOrder Order=RowMajor,
-          UpperLower UpLo = Upper>
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor, UpperLower UpLo = Upper>
 void trmv(unsigned int n, TriangularMatrix<T, Par, Order, UpLo> &A, Vector<T, Par> &x,
           Vector<T, Par> &result);
 // TODO: Subtemplates for trmv, tbmv, tpmv
@@ -459,8 +458,7 @@ void trmv(unsigned int n, TriangularMatrix<T, Par, Order, UpLo> &A, Vector<T, Pa
  * @param[in]  x The input vector to solve for.
  * @param[out] result The output vector to write to.
  */
-template <typename T, unsigned int Par, MajorOrder Order=RowMajor,
-          UpperLower UpLo = Upper>
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor, UpperLower UpLo = Upper>
 void trsv(unsigned int n, TriangularMatrix<T, Par, Order, UpLo> &A, Vector<T, Par> &x,
           Vector<T, Par> &result);
 // TODO: Subtemplates for trsv, tbsv, tpsv
@@ -489,8 +487,8 @@ void trsv(unsigned int n, TriangularMatrix<T, Par, Order, UpLo> &A, Vector<T, Pa
  * @param[out] result The output matrix to write to.
  */
 template <typename T, unsigned int Par>
-void ger(unsigned int m, unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y, Matrix<T, Par> &A,
-         Matrix<T, Par> &result);
+void ger(unsigned int m, unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y,
+         Matrix<T, Par> &A, Matrix<T, Par> &result);
 // TODO: Subtemplates for syr, her, spr, hpr
 // TODO: Specific implementations for the standard: cgeru, zgeru, dger, sger,
 // ssyr, dsyr, cher, zher, sspr, dspr, chpr, zhpr
@@ -516,10 +514,9 @@ void ger(unsigned int m, unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, P
  * @param[in]  A The input matrix to add to.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par,
-          MajorOrder Order=RowMajor>
-void gerc(unsigned int m, unsigned int n, T alpha, Vector<Complex<T>, Par> &x, Vector<Complex<T>, Par> &y,
-          Matrix<Complex<T>, Par, Order> &A,
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor>
+void gerc(unsigned int m, unsigned int n, T alpha, Vector<Complex<T>, Par> &x,
+          Vector<Complex<T>, Par> &y, Matrix<Complex<T>, Par, Order> &A,
           Matrix<Complex<T>, Par, Order> &result);
 // TODO: Specific implementations for the standard: cgerc, zgerc
 
@@ -543,11 +540,9 @@ void gerc(unsigned int m, unsigned int n, T alpha, Vector<Complex<T>, Par> &x, V
  * @param[in]  A The input matrix to add to.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, MajorOrder Order=RowMajor,
-          UpperLower UpLo = Upper>
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor, UpperLower UpLo = Upper>
 void syr2(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y,
-          SymmetricMatrix<T, Par, Order, UpLo> &A,
-          SymmetricMatrix<T, Par, Order, UpLo> &result);
+          SymmetricMatrix<T, Par, Order, UpLo> &A, SymmetricMatrix<T, Par, Order, UpLo> &result);
 // TODO: Specific implementations for the standard: dsyr2, ssyr2, sspr2, dspr2
 
 /**
@@ -570,8 +565,7 @@ void syr2(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y,
  * @param[in]  A The input matrix to add to.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, MajorOrder Order=RowMajor,
-          UpperLower UpLo = Upper>
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor, UpperLower UpLo = Upper>
 void her2(unsigned int n, T alpha, Vector<Complex<T>, Par> &x, Vector<Complex<T>, Par> &y,
           HermitianMatrix<Complex<T>, Par, Order, UpLo> &A,
           HermitianMatrix<Complex<T>, Par, Order, UpLo> &result);
@@ -609,10 +603,11 @@ void her2(unsigned int n, T alpha, Vector<Complex<T>, Par> &x, Vector<Complex<T>
  * @param[in]  C The input matrix to add to.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par,
-          MajorOrder OrderA = RowMajor, MajorOrder OrderB = ColMajor, UpperLower UpLo=Upper>
-void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, OrderA> &A, Matrix<T, Par, OrderB> &B, T beta,
-        Matrix<T, Par, OrderA> &C, Matrix<T, Par, OrderA> &result);
+template <typename T, unsigned int Par, MajorOrder OrderA = RowMajor, MajorOrder OrderB = ColMajor,
+          UpperLower UpLo = Upper>
+void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, OrderA> &A,
+        Matrix<T, Par, OrderB> &B, T beta, Matrix<T, Par, OrderA> &C,
+        Matrix<T, Par, OrderA> &result);
 // TODO: Subtemplates for gemm, hemm, symm, gemmtr
 // TODO: Specific implementations for the standard: cgemm, dgemm, sgemm, zgemm,
 // sgemmtr, dgemmtr, cgemmtr, zgemmtr,
@@ -646,10 +641,10 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, 
  * @param[in]  B The input matrix to multiply.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par,
-          MajorOrder OrderA = RowMajor, MajorOrder OrderB = ColMajor, UpperLower UpLo = Upper>
-void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, OrderA> &A, Matrix<T, Par, OrderB> &B,
-        Matrix<T, Par, OrderA> &result);
+template <typename T, unsigned int Par, MajorOrder OrderA = RowMajor, MajorOrder OrderB = ColMajor,
+          UpperLower UpLo = Upper>
+void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, OrderA> &A,
+        Matrix<T, Par, OrderB> &B, Matrix<T, Par, OrderA> &result);
 // TODO: Subtemplates for gemm, hemm, symm, trmm
 // TODO: Specific implementations for the standard: cgemm, dgemm, sgemm, zgemm,
 // strmm, dtrmm, ctrmm, ztrmm, chemm, zhemm, csymm, zsymm, ssymm, dsymm
@@ -675,10 +670,9 @@ void mm(unsigned int m, unsigned int n, unsigned int k, T alpha, Matrix<T, Par, 
  * @param[in]  B The input matrix to solve for. Dimensions are m x n.
  * @param[out] result The output matrix to write to. Dimensions are m x n.
  */
-template <typename T, unsigned int Par, MajorOrder Order = RowMajor,
-          UpperLower UpLo = Upper>
-void trsm(unsigned int m, unsigned int n, T alpha, TriangularMatrix<T, Par, Order, UpLo> &A, Matrix<T, Par> &B,
-          Matrix<T, Par> &result);
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor, UpperLower UpLo = Upper>
+void trsm(unsigned int m, unsigned int n, T alpha, TriangularMatrix<T, Par, Order, UpLo> &A,
+          Matrix<T, Par> &B, Matrix<T, Par> &result);
 // TODO: Specific implementations for the standard: ctrsm, dtrsm, strsm, ztrsm
 // TODO: Original specificaiton takes options to pre-transpose A and B, as well
 // as take their conjugate transpose
@@ -704,11 +698,9 @@ void trsm(unsigned int m, unsigned int n, T alpha, TriangularMatrix<T, Par, Orde
  * @param[in]  C The input matrix to add to. Is square and symmetric.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, MajorOrder Order = RowMajor,
-          UpperLower UpLo = Upper>
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor, UpperLower UpLo = Upper>
 void syrk(unsigned int n, unsigned int k, T alpha, Matrix<T, Par, Order> &A, T beta,
-          SymmetricMatrix<T, Par, Order, UpLo> &C,
-          SymmetricMatrix<T, Par, Order, UpLo> &result);
+          SymmetricMatrix<T, Par, Order, UpLo> &C, SymmetricMatrix<T, Par, Order, UpLo> &result);
 // TODO: Specific implementations for the standard: csyrk, dsyrk, ssyrk, zsyrk
 
 /**
@@ -732,8 +724,7 @@ void syrk(unsigned int n, unsigned int k, T alpha, Matrix<T, Par, Order> &A, T b
  * @param[in]  C The input matrix to add to. Is square and Hermitian.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, MajorOrder Order = RowMajor,
-          UpperLower UpLo = Upper>
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor, UpperLower UpLo = Upper>
 void herk(unsigned int n, unsigned int k, T alpha, Matrix<Complex<T>, Par, Order> &A, T beta,
           HermitianMatrix<Complex<T>, Par, Order, UpLo> &C,
           HermitianMatrix<Complex<T>, Par, Order, UpLo> &result);
@@ -762,10 +753,9 @@ void herk(unsigned int n, unsigned int k, T alpha, Matrix<Complex<T>, Par, Order
  * @param[in]  C The input matrix to add to. Is square and symmetric.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, MajorOrder Order = RowMajor,
-          UpperLower UpLo = Upper>
-void syr2k(unsigned int n, unsigned int k, T alpha, Matrix<T, Par, Order> &A, Matrix<T, Par, Order> &B,
-           T beta, SymmetricMatrix<T, Par, Order, UpLo> &C,
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor, UpperLower UpLo = Upper>
+void syr2k(unsigned int n, unsigned int k, T alpha, Matrix<T, Par, Order> &A,
+           Matrix<T, Par, Order> &B, T beta, SymmetricMatrix<T, Par, Order, UpLo> &C,
            SymmetricMatrix<T, Par, Order, UpLo> &result);
 // TODO: Specific implementations for the standard: csyr2k, dsyr2k, ssyr2k,
 // zsyr2k
@@ -793,8 +783,7 @@ void syr2k(unsigned int n, unsigned int k, T alpha, Matrix<T, Par, Order> &A, Ma
  * @param[in]  C The input matrix to add to. Is square and Hermitian.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, unsigned int Par, MajorOrder Order = RowMajor,
-          UpperLower UpLo = Upper>
+template <typename T, unsigned int Par, MajorOrder Order = RowMajor, UpperLower UpLo = Upper>
 void her2k(unsigned int n, unsigned int k, T alpha, Matrix<Complex<T>, Par, Order> &A,
            Matrix<Complex<T>, Par, Order> &B, T beta,
            HermitianMatrix<Complex<T>, Par, Order, UpLo> &C,

@@ -28,6 +28,7 @@
 #define dimMSweepMin 64
 #define dimMSweepMax 4096
 
-void dgemv_cm(double alpha, double A[dimN][dimM], double x[dimN], double beta, double y[dimN], double r[dimN]);
+void dgemv_cm(double alpha, double A[dimN][dimM], double x[dimN], double beta, double y[dimN],
+              double r[dimN]);
 
 #endif  // DYFC_BLAS_TEST_DGEMV_CM_HPP

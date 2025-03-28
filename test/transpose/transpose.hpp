@@ -29,6 +29,6 @@
 #define dimMSweepMax 4096
 
 void transpose_krnl(double A[dimN][dimM], double ArTc[dimN][dimM], double ArTr[dimM][dimN],
-               double AcTr[dimN][dimM], double AcTc[dimM][dimN]);
+                    double AcTr[dimN][dimM], double AcTc[dimM][dimN]);
 
 #endif  // DYFC_BLAS_TEST_TRANSPOSE_HPP

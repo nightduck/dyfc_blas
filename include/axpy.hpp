@@ -102,7 +102,7 @@ void axpy(unsigned int n, unsigned int m, T alpha, Matrix<T, Order, Par> &x,
       result.write(r_val);
     }
   }
-  
+
   ASSERT(x.empty(), "Matrix x isn't empty");
   ASSERT(y.empty(), "Matrix y isn't empty");
   ASSERT(!result.empty(), "Matrix result is empty");

@@ -19,7 +19,7 @@
 // Test both the basic asum and the prefix sum calls
 void dasum(double x[dimN], double &r) {
 #pragma HLS DATAFLOW
-    
+
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to
   // constructor
   dyfc::blas::Vector<double> x_v(x, dimN);

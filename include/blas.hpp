@@ -20,8 +20,8 @@
 #include "types.hpp"
 // #include "prototypes.hpp"
 
-#include "axpy.hpp"
 #include "asum.hpp"
+#include "axpy.hpp"
 #include "dot.hpp"
 #include "mm.hpp"
 #include "mv.hpp"
