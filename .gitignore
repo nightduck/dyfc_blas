@@ -9,6 +9,7 @@
 #Ignore logs folder and log files
 /logs
 .log
+**/logs
 
 #Ignore lock files
 .lock
@@ -29,3 +30,4 @@ test/*/build
 test/*/.Xil
 test/*/*.log
 test/*/vitis-comp.json
+/temp

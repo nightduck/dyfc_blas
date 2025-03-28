@@ -23,7 +23,7 @@
 #define RANDOM (double)(rand() % 100 - 50) / (double)(rand() % 100 + 1)
 
 bool approximatelyEqual(double a, double b, double epsilon) {
-  return (a == b) || std::abs(a/b - 1) <= epsilon;
+  return (a == b) || std::abs(a / b - 1) <= epsilon;
 }
 
 void print_vector(double *v, int n) {
@@ -44,13 +44,13 @@ void print_matrix(double *A, int m, int n) {
   printf("\n");
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   double alpha;
   double A[dimM][dimK];
-  double B[dimN][dimK];   // B is stored in col-major order
+  double B[dimN][dimK];  // B is stored in col-major order
   double beta;
-  double C[dimN][dimM];  // C is stored in col-major order
-  double r[dimN][dimM];  // r is stored in col-major order
+  double C[dimN][dimM];       // C is stored in col-major order
+  double r[dimN][dimM];       // r is stored in col-major order
   double r_gold[dimN][dimM];  // r_gold is stored in col-major order
 
   // Initialize variables with random floats
@@ -82,7 +82,6 @@ int main(int argc, char** argv) {
       }
     }
   }
-  
 
   // Make call to kernel
   dgemm_rcc(alpha, A, B, beta, C, r);

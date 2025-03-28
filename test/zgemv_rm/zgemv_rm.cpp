@@ -28,8 +28,7 @@ void zgemv_rm(ComplexDouble alpha, ComplexDouble A[dimM][dimN], ComplexDouble x[
   dyfc::blas::Vector<ComplexDouble> r_v(dimM);
 
   // Call a templated version of the blas function being tested
-  dyfc::blas::mv<ComplexDouble, dyfc::blas::RowMajor>(dimM, dimN, alpha, A_m, x_v, beta, y_v,
-                                                           r_v);
+  dyfc::blas::mv<ComplexDouble, dyfc::blas::RowMajor>(dimM, dimN, alpha, A_m, x_v, beta, y_v, r_v);
 
   // Write the result back to the output array
   r_v.to_memory(r);

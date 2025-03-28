@@ -15,13 +15,12 @@
 #ifndef DYFC_BLAS_HPP
 #define DYFC_BLAS_HPP
 
-#include "assert.hpp"
 #include "complex.hpp"
 #include "types.hpp"
 // #include "prototypes.hpp"
 
-#include "axpy.hpp"
 #include "asum.hpp"
+#include "axpy.hpp"
 #include "dot.hpp"
 #include "mm.hpp"
 #include "mv.hpp"

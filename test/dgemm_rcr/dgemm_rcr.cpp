@@ -16,7 +16,8 @@
 
 #include "blas.hpp"
 
-void dgemm_rcr(double alpha, double A[dimM][dimK], double B[dimN][dimK], double beta, double C[dimM][dimN], double r[dimM][dimN]) {
+void dgemm_rcr(double alpha, double A[dimM][dimK], double B[dimN][dimK], double beta,
+               double C[dimM][dimN], double r[dimM][dimN]) {
 #pragma HLS DATAFLOW
 
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to

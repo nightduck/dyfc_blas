@@ -1,0 +1,6 @@
+BasedOnStyle: Google
+AlignEscapedNewlines: Left
+AlwaysBreakTemplateDeclarations: true
+ColumnLimit: 100 
+IndentWidth: 2
+SpaceAroundPointerQualifiers: Both

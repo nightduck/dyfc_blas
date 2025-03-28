@@ -23,7 +23,7 @@
 #define RANDOM (double)(rand() % 100 - 50) / (double)(rand() % 100 + 1)
 
 bool approximatelyEqual(double a, double b, double epsilon) {
-  return (a == b) || std::abs(a/b - 1) <= epsilon;
+  return (a == b) || std::abs(a / b - 1) <= epsilon;
 }
 
 void print_vector(double *v, int n) {
@@ -44,7 +44,7 @@ void print_matrix(double *A, int m, int n) {
   printf("\n");
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   // Row major means mxn is rows x cols
   // Col major means mxn is cols x rows
   double A[dimN][dimM];
@@ -72,27 +72,29 @@ int main(int argc, char** argv) {
     for (int j = 0; j < dimM; j++) {
       if (!approximatelyEqual(A[i][j], ArTc[i][j], 1e-9)) {
         std::cout << "FAILED TEST" << std::endl;
-        std::cout << "A/ArTc[" << i << "][" << j << "] = " << A[i][j] << " != " << ArTc[i][j] << std::endl;
+        std::cout << "A/ArTc[" << i << "][" << j << "] = " << A[i][j] << " != " << ArTc[i][j]
+                  << std::endl;
         fail = 1;
         return -1;
       }
       // if (!approximatelyEqual(AT[j][i], ArTr[j][i], 1e-9)) {
       //   fail = 1;
       //   std::cout << "FAILED TEST" << std::endl;
-      //   std::cout << "AT/ArTr[" << j << "][" << i << "] = " << AT[j][i] << " != " << ArTr[j][i] << std::endl;
-      //   return -1;
+      //   std::cout << "AT/ArTr[" << j << "][" << i << "] = " << AT[j][i] << " != " << ArTr[j][i]
+      //   << std::endl; return -1;
       // }
       if (!approximatelyEqual(A[i][j], AcTr[i][j], 1e-9)) {
         fail = 1;
         std::cout << "FAILED TEST" << std::endl;
-        std::cout << "A/AcTr[" << i << "][" << j << "] = " << A[i][j] << " != " << AcTc[i][j] << std::endl;
+        std::cout << "A/AcTr[" << i << "][" << j << "] = " << A[i][j] << " != " << AcTc[i][j]
+                  << std::endl;
         return -1;
       }
       // if (!approximatelyEqual(AT[j][i], AcTc[j][i], 1e-9)) {
       //   fail = 1;
       //   std::cout << "FAILED TEST" << std::endl;
-      //   std::cout << "AT/AcTc[" << j << "][" << i << "] = " << AT[j][i] << " != " << AcTr[j][i] << std::endl;
-      //   return -1;
+      //   std::cout << "AT/AcTc[" << j << "][" << i << "] = " << AT[j][i] << " != " << AcTr[j][i]
+      //   << std::endl; return -1;
       // }
     }
   }

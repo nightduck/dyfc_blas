@@ -16,7 +16,8 @@
 
 #include "blas.hpp"
 
-void sgemv_rm(float alpha, float A[dimM][dimN], float x[dimN], float beta, float y[dimM], float r[dimM]) {
+void sgemv_rm(float alpha, float A[dimM][dimN], float x[dimN], float beta, float y[dimM],
+              float r[dimM]) {
 #pragma HLS DATAFLOW
 
   // Load parameters into vectors and matrices. 2D arrays must be flattened before passing to

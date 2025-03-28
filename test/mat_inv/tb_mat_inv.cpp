@@ -23,7 +23,7 @@
 #define RANDOM (double)(rand() % 100 - 50) / (double)(rand() % 100 + 1)
 
 bool approximatelyEqual(double a, double b, double epsilon) {
-  return (a == b) || std::abs(a/b - 1) <= epsilon;
+  return (a == b) || std::abs(a / b - 1) <= epsilon;
 }
 
 int main(int argc, char** argv) {
@@ -36,12 +36,12 @@ int main(int argc, char** argv) {
   for (int i = 0; i < dimN; i++) {
     for (int j = 0; j < dimN; j++) {
       x[i][j] = RANDOM;
-      if (i == j) x[i][j]; // Little trick to guarantee it's invertible
+      if (i == j) x[i][j];  // Little trick to guarantee it's invertible
     }
   }
 
   // Create a load a matrix that is left half x and right half identity
-  double gjordan[dimN][2*dimN];
+  double gjordan[dimN][2 * dimN];
   for (int i = 0; i < dimN; i++) {
     for (int j = 0; j < dimN; j++) {
       gjordan[i][j] = x[i][j];
@@ -56,16 +56,16 @@ int main(int argc, char** argv) {
   // Compute the correct result with gaussian elimination
   for (int i = 0; i < dimN; i++) {
     for (int j = 0; j < dimN; j++) {
-    // std::cout << "i=" << i <<",j=" << j << std::endl;
-    // for (int i = 0; i < dimN; i++) {
-    //     for (int j = 0; j < 2*dimN; j++) {
-    //     std::cout << std::setw(12) << gjordan[i][j] << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
+      // std::cout << "i=" << i <<",j=" << j << std::endl;
+      // for (int i = 0; i < dimN; i++) {
+      //     for (int j = 0; j < 2*dimN; j++) {
+      //     std::cout << std::setw(12) << gjordan[i][j] << " ";
+      //     }
+      //     std::cout << std::endl;
+      // }
       double alpha = gjordan[j][i];
       double beta = gjordan[i][i];
-      for (int k = i; k < 2*dimN; k++) {
+      for (int k = i; k < 2 * dimN; k++) {
         if (j < i) {
           gjordan[j][k] -= (gjordan[i][k] * alpha / beta);
         } else if (i == j) {
@@ -87,28 +87,28 @@ int main(int argc, char** argv) {
   // Make call to kernel
   mat_inv(x, r);
 
-//   // Print the input matrix
-//   std::cout << "Input matrix:" << std::endl;
-//   for (int i = 0; i < dimN; i++) {
-//     for (int j = 0; j < dimN; j++) {
-//       std::cout << std::setw(12) << x[i][j] << " ";
-//     }
-//     std::cout << std::endl;
-//   }
-//   std::cout << "Output matrix:" << std::endl;
-//   for (int i = 0; i < dimN; i++) {
-//     for (int j = 0; j < dimN; j++) {
-//       std::cout << std::setw(12) << r[i][j] << " ";
-//     }
-//     std::cout << std::endl;
-//   }
-//   std::cout << "Gold matrix:" << std::endl;
-//   for (int i = 0; i < dimN; i++) {
-//     for (int j = 0; j < dimN; j++) {
-//       std::cout << std::setw(12) << r_gold[i][j] << " ";
-//     }
-//     std::cout << std::endl;
-//   }
+  //   // Print the input matrix
+  //   std::cout << "Input matrix:" << std::endl;
+  //   for (int i = 0; i < dimN; i++) {
+  //     for (int j = 0; j < dimN; j++) {
+  //       std::cout << std::setw(12) << x[i][j] << " ";
+  //     }
+  //     std::cout << std::endl;
+  //   }
+  //   std::cout << "Output matrix:" << std::endl;
+  //   for (int i = 0; i < dimN; i++) {
+  //     for (int j = 0; j < dimN; j++) {
+  //       std::cout << std::setw(12) << r[i][j] << " ";
+  //     }
+  //     std::cout << std::endl;
+  //   }
+  //   std::cout << "Gold matrix:" << std::endl;
+  //   for (int i = 0; i < dimN; i++) {
+  //     for (int j = 0; j < dimN; j++) {
+  //       std::cout << std::setw(12) << r_gold[i][j] << " ";
+  //     }
+  //     std::cout << std::endl;
+  //   }
 
   // Verify results. Due to potential floating point error, we need to use an approximate comparison
   int failed_index = -1;

@@ -20,9 +20,7 @@
 namespace dyfc {
 namespace blas {
 
-constexpr size_t log2(size_t n) {
-    return ((n < 2) ? 0 : 1 + mylog2(n / 2));
-}
+constexpr size_t log2(size_t n) { return ((n < 2) ? 0 : 1 + mylog2(n / 2)); }
 
 }  // namespace blas
 }  // namespace dyfc

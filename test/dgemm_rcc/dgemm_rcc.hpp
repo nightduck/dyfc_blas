@@ -33,6 +33,7 @@
 #define dimKSweepMin 64
 #define dimKSweepMax 2048
 
-void dgemm_rcc(double alpha, double A[dimM][dimK], double B[dimN][dimK], double beta, double C[dimN][dimM], double r[dimN][dimM]);
+void dgemm_rcc(double alpha, double A[dimM][dimK], double B[dimN][dimK], double beta,
+               double C[dimN][dimM], double r[dimN][dimM]);
 
 #endif  // DYFC_BLAS_TEST_DGEMM_RCC_HPP
