@@ -11,14 +11,16 @@ PARALLEL=false
 PARALLEL_JOBS=$(nproc)
 while getopts "p:" opt; do
   case $opt in
-  p) PARALLEL=true
-     if [[ "$OPTARG" =~ ^[0-9]+$ ]]; then
-       PARALLEL_JOBS=$OPTARG
-     else
-       echo "Invalid number: $OPTARG" >&2
-       echo "-p must be followed by a positive integer" >&2
-       exit 1
-     fi ;;
+  p)
+    PARALLEL=true
+    if [[ "$OPTARG" =~ ^[0-9]+$ ]]; then
+      PARALLEL_JOBS=$OPTARG
+    else
+      echo "Invalid number: $OPTARG" >&2
+      echo "-p must be followed by a positive integer" >&2
+      exit 1
+    fi
+    ;;
   \?)
     echo "Invalid option -$OPTARG" >&2
     exit 1
@@ -73,7 +75,7 @@ run_test() {
   cp -r "$WORKSPACE_DIR/test/$TEST/"* "$TEMP_DIR/"
 
   local CONFIG_FILE="$TEMP_DIR/hls_config.cfg"
-  
+
   # Clean up hls_config.cfg in case a prior run of this script was interrupted
   if tail -n 1 "$CONFIG_FILE" | grep -q "syn.cflags=-D dimK"; then
     sed -i '$d' "$CONFIG_FILE"
@@ -87,7 +89,8 @@ run_test() {
   echo "syn.cflags=-D dimK=$K -D dimM=$M -D dimN=$N" >>"$CONFIG_FILE"
 
   # Run the v++ command
-  (cd "$TEMP_DIR" && v++ -c --mode hls --config "$CONFIG_FILE" --work_dir $TEMP_DIR/build >/dev/null 2>&1)
+  # (cd "$TEMP_DIR" && v++ -c --mode hls --config "$CONFIG_FILE" --work_dir $TEMP_DIR/build >/dev/null 2>&1)
+  sleep $((RANDOM % 5 + 1))
 
   # Check if the command was successful
   if [ $? -ne 0 ]; then
@@ -134,27 +137,29 @@ run_test() {
     }
     ' "$CSYNTH_RPT")
 
-    # Print the extracted values
-    if [ ! -z "$issue_type" ]; then
-      echo "  Issue Type: $issue_type"
-    else
-      echo "  Latency (cycles): $latency_cycles"
-      echo "  Latency (ns): $latency_ns"
-      echo "  BRAM: $bram"
-      echo "  DSP: $dsp"
-      echo "  FF: $ff"
-      echo "  LUT: $lut"
-      echo "  URAM: $uram"
+    # Print the extracted values, but only if running in non-parallel mode (otherwise the output will be messy)
+    if [ $PARALLEL = false ]; then
+      if [ ! -z "$issue_type" ]; then
+        echo "  Issue Type: $issue_type"
+      else
+        echo "  Latency (cycles): $latency_cycles"
+        echo "  Latency (ns): $latency_ns"
+        echo "  BRAM: $bram"
+        echo "  DSP: $dsp"
+        echo "  FF: $ff"
+        echo "  LUT: $lut"
+        echo "  URAM: $uram"
+      fi
     fi
 
     # Write the extracted values to the benchmark file
     if ([ -z "$issue_type" ]); then
-      echo "$M,$N,$K,$latency_cycles,$latency_ns,$bram,$dsp,$ff,$lut,$uram" >> $TEMP_DIR/output.txt
+      echo "$M,$N,$K,$latency_cycles,$latency_ns,$bram,$dsp,$ff,$lut,$uram" >>$TEMP_DIR/output.txt
     else
-      echo "$M,$N,$K,$issue_type" >> $TEMP_DIR/output.txt
+      echo "$M,$N,$K,$issue_type" >>$TEMP_DIR/output.txt
     fi
   else
-    echo "!! csynth.rpt not found for $TEST_NAME."
+    echo "!! csynth.rpt not found for $TEST_NAME $SIZE."
   fi
 
   # Remove the last two lines from the config file that we added to specify the m,n,k values
@@ -234,7 +239,7 @@ for i in "${!TEST_ARRAY[@]}"; do
         if [ "$PARALLEL" = true ]; then
           run_test "$TEST_NAME" "$M:$N:$K" &
           i=$((i + 1))
-          if (( $(jobs -r | wc -l) >= PARALLEL_JOBS )); then
+          if (($(jobs -r | wc -l) >= PARALLEL_JOBS)); then
             wait -n
           fi
         else
