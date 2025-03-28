@@ -117,16 +117,11 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
   ASSERT(A.read_lock(), "This matrix is a pure stream and only accepts one reader");
   ASSERT(B.read_lock(), "This matrix is a pure stream and only accepts one reader");
   ASSERT(result.write_lock(), "This matrix only accepts one writer");
-  ASSERT(A.is_buffered() || B.is_buffered() || buffer != nullptr,
-         "When A and B are pure streams, a buffer of size n*(m+1) must be provided");
-  ASSERT(B.is_buffered() || buffer != nullptr,
-         "When B is a pure stream, a buffer of size m*n must be provided");
-  ASSERT(A.is_buffered() || buffer != nullptr,
-         "When A is a pure stream, a buffer of size n must be provided");
+
   typename Matrix<T, RowMajor, Par>::StreamType A_stream;
   typename Matrix<T, ColMajor, Par>::StreamType B_stream;
-  A.read(A_stream, false, B.cols(), 1, buffer);
-  B.read(B_stream, false, 1, A.rows(), buffer + (A.is_buffered() ? 0 : n));
+  A.read(A_stream, false, B.cols(), 1);
+  B.read(B_stream, false, 1, A.rows());
 
   mm_impl<T, RowMajor, Par>(m, n, k, alpha, A_stream, B_stream, result);
 
@@ -182,8 +177,8 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
 
   typename Matrix<T, RowMajor, Par>::StreamType A_stream;
   typename Matrix<T, ColMajor, Par>::StreamType B_stream;
-  B.read(B_stream, false, A.rows(), 1, buffer);
-  A.read(A_stream, false, 1, B.cols(), buffer + (B.is_buffered() ? 0 : m));
+  B.read(B_stream, false, A.rows(), 1);
+  A.read(A_stream, false, 1, B.cols());
   mm_impl<T, ColMajor, Par>(n, m, k, alpha, B_stream, A_stream, result);
 
   ASSERT(A.empty(), "Matrix A isn't empty");
@@ -222,8 +217,8 @@ template <typename T, const MajorOrder OrderA = RowMajor, const MajorOrder Order
           const MajorOrder OrderC = RowMajor, const UpperLower UpLo = Upper,
           const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T), const unsigned int Par2 = Par>
 void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alpha,
-        Matrix<T, OrderA, Par> &A, Matrix<T, OrderB, Par> &B, T beta, Matrix<T, OrderC, Par2> &C,
-        Matrix<T, OrderC, Par2> &result, T *buffer = nullptr) {
+        Matrix<T, OrderA, Par> &A, Matrix<T, OrderB, Par> &B, T beta, Matrix<T, OrderC, Par> &C,
+        Matrix<T, OrderC, Par> &result, T *buffer = nullptr) {
 #pragma HLS INLINE
   ASSERT((n % Par) == 0, "n must be a multiple of Par");
   ASSERT((m % Par) == 0, "m must be a multiple of Par");
