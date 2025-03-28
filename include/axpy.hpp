@@ -42,14 +42,15 @@ namespace blas {
 template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void axpy(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y, Vector<T, Par> &result) {
 #pragma HLS INLINE
-  ASSERT((n % Par) == 0, "n must be a multiple of Par");
-  ASSERT(n == x.length(), "n must be equal to the length of x");
-  ASSERT(n == y.length(), "n must be equal to the length of y");
-  ASSERT(n == result.length(), "n must be equal to the length of result");
-  ASSERT(x.read_lock(), "This vector is a pure stream and only accepts one reader");
-  ASSERT(y.read_lock(), "This vector is a pure stream and only accepts one reader");
-  ASSERT(result.write_lock(), "This vector only accepts one writer");
-
+#ifndef __SYNTHESIS__
+  assert((n % Par) == 0);
+  assert(n == x.length());
+  assert(n == y.length());
+  assert(n == result.length());
+  assert(("This vector is a pure stream and only accepts one reader", x.read_lock()));
+  assert(("This vector is a pure stream and only accepts one reader", y.read_lock()));
+  assert(("This vector only accepts one writer", result.write_lock()));
+#endif
   typename Vector<T, Par>::StreamType x_stream;
   typename Vector<T, Par>::StreamType y_stream;
   x.read(x_stream);
@@ -65,26 +66,30 @@ void axpy(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y, Vector<
     }
     result.write(r_val);
   }
-
-  ASSERT(x.empty(), "Vector x isn't empty");
-  ASSERT(y.empty(), "Vector y isn't empty");
-  ASSERT(!result.empty(), "Vector result is empty");
+#ifndef __SYNTHESIS__
+  assert(("Vector x isn't empty", x.empty()));
+  assert(("Vector y isn't empty", y.empty()));
+  assert(("Vector result is empty", !result.empty()));
+#endif
 }
 
 template <typename T, const MajorOrder Order, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void axpy(unsigned int n, unsigned int m, T alpha, Matrix<T, Order, Par> &x,
           Matrix<T, Order, Par> &y, Matrix<T, Order, Par> &result) {
 #pragma HLS INLINE
-  ASSERT((n % Par) == 0, "n must be a multiple of Par");
-  ASSERT((m % Par) == 0, "m must be a multiple of Par");
-  ASSERT(n == x.rows(), "n must be equal to the number of rows of x");
-  ASSERT(m == x.cols(), "m must be equal to the number of cols of x");
-  ASSERT(n == y.rows(), "n must be equal to the number of rows of y");
-  ASSERT(m == y.cols(), "m must be equal to the number of cols of y");
-  ASSERT(x.read_lock(), "This matrix is a pure stream and only accepts one reader");
-  ASSERT(y.read_lock(), "This matrix is a pure stream and only accepts one reader");
-  ASSERT(result.write_lock(), "This matrix only accepts one writer");
-
+#ifndef __SYNTHESIS__
+  assert((n % Par) == 0);
+  assert((m % Par) == 0);
+  assert(n == x.rows());
+  assert(m == x.cols());
+  assert(n == y.rows());
+  assert(m == y.cols());
+  assert(n == result.rows());
+  assert(m == result.cols());
+  assert(("This matrix is a pure stream and only accepts one reader", x.read_lock()));
+  assert(("This matrix is a pure stream and only accepts one reader", y.read_lock()));
+  assert(("This matrix only accepts one writer", result.write_lock()));
+#endif
   typename Matrix<T, Order, Par>::StreamType x_stream;
   typename Matrix<T, Order, Par>::StreamType y_stream;
   x.read(x_stream);
@@ -102,10 +107,11 @@ void axpy(unsigned int n, unsigned int m, T alpha, Matrix<T, Order, Par> &x,
       result.write(r_val);
     }
   }
-
-  ASSERT(x.empty(), "Matrix x isn't empty");
-  ASSERT(y.empty(), "Matrix y isn't empty");
-  ASSERT(!result.empty(), "Matrix result is empty");
+#ifndef __SYNTHESIS__
+  assert(("Matrix x isn't empty", x.empty()));
+  assert(("Matrix y isn't empty", y.empty()));
+  assert(("Matrix result is empty", !result.empty()));
+#endif
 }
 
 }  // namespace blas
