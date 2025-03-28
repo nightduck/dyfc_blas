@@ -119,9 +119,12 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
   assert(("This matrix is a pure stream and only accepts one reader", A.read_lock()));
   assert(("This matrix is a pure stream and only accepts one reader", B.read_lock()));
   assert(("This matrix only accepts one writer", result.write_lock()));
-  assert(("When A and B are pure streams, a buffer of size n*(m+1) must be provided", A.is_buffered() || B.is_buffered() || buffer != nullptr));
-  assert(("When B is a pure stream, a buffer of size m*n must be provided", B.is_buffered() || buffer != nullptr));
-  assert(("When A is a pure stream, a buffer of size n must be provided", A.is_buffered() || buffer != nullptr));
+  assert(("When A and B are pure streams, a buffer of size n*(m+1) must be provided",
+          A.is_buffered() || B.is_buffered() || buffer != nullptr));
+  assert(("When B is a pure stream, a buffer of size m*n must be provided",
+          B.is_buffered() || buffer != nullptr));
+  assert(("When A is a pure stream, a buffer of size n must be provided",
+          A.is_buffered() || buffer != nullptr));
 #endif
   typename Matrix<T, RowMajor, Par>::StreamType A_stream;
   typename Matrix<T, ColMajor, Par>::StreamType B_stream;

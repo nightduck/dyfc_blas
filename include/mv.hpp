@@ -43,8 +43,7 @@ namespace blas {
  * @param[in]  buffer A buffer of size m to store the intermediate results of the
  */
 template <typename T, const MajorOrder Order = RowMajor,
-          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T),
-          const unsigned int Par2 = Par>
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T), const unsigned int Par2 = Par>
 void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Par> &A,
         Vector<T, Par> &x, Vector<T, Par2> &result, T *buffer = nullptr) {
 #pragma HLS INLINE
@@ -133,7 +132,7 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
             }
           } else {
             for (int l = 0; l < Par; l++) {
-#pragma HLS UNROLL factor=Par2
+#pragma HLS UNROLL factor = Par2
               rout_val[(k + l) % Par2] = r_val[l];
               if ((k + l) % Par2 == Par2 - 1) {
                 result.write(rout_val);
@@ -182,10 +181,10 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
  * @param[out] result The output vector to write to.
  */
 template <typename T, const MajorOrder Order = RowMajor,
-          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T),
-          const unsigned int Par2 = Par>
+          const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T), const unsigned int Par2 = Par>
 void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Par> &A,
-        Vector<T, Par> &x, T beta, Vector<T, Par> &y, Vector<T, Par2> &result, T *buffer = nullptr) {
+        Vector<T, Par> &x, T beta, Vector<T, Par> &y, Vector<T, Par2> &result,
+        T *buffer = nullptr) {
 #pragma HLS INLINE
 #ifndef __SYNTHESIS__
   assert((n % Par) == 0);
