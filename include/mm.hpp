@@ -45,13 +45,14 @@ namespace blas {
  * been repeated m times.
  * @param[out] result The output matrix to write to.
  */
-template <typename T, const MajorOrder Order, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+template <typename T, const MajorOrder Order, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T),
+          const unsigned int Par2 = Par>
 void mm_impl(const unsigned int m, const unsigned int n, const unsigned int k, T alpha,
              hls::stream<WideType<T, Par>> &A_stream, hls::stream<WideType<T, Par>> &B_stream,
              Matrix<T, Order, Par> &result) {
 #pragma HLS INLINE
   T r(0);
-  WideType<T, Par> r_out;
+  WideType<T, Par2> r_out;
   for (size_t i = 0; i < m; i++) {
     for (size_t j = 0; j < n; j++) {
       for (size_t l = 0; l < k; l += Par) {
@@ -67,8 +68,8 @@ void mm_impl(const unsigned int m, const unsigned int n, const unsigned int k, T
         prefixsum<T, Par>(r_val, rsum_val, r);
         r = rsum_val[Par - 1];
         if (l + Par >= k) {
-          r_out[j % Par] = r;
-          if (j % Par == Par - 1) {
+          r_out[j % Par2] = r;
+          if (j % Par2 == Par2 - 1) {
             result.write(r_out * alpha);
           }
           r = T(0);
@@ -100,14 +101,16 @@ void mm_impl(const unsigned int m, const unsigned int n, const unsigned int k, T
  * @param[out] result The output matrix to write to.
  * @param[in]  buffer Unused.
  */
-template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T),
+          const unsigned int Par2 = Par>
 void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alpha,
-        Matrix<T, RowMajor, Par> &A, Matrix<T, ColMajor, Par> &B, Matrix<T, RowMajor, Par> &result,
+        Matrix<T, RowMajor, Par> &A, Matrix<T, ColMajor, Par> &B, Matrix<T, RowMajor, Par2> &result,
         T *buffer = nullptr) {
 #pragma HLS INLINE
-  ASSERT((n % Par) == 0, "n must be a multiple of Par");
-  ASSERT((m % Par) == 0, "m must be a multiple of Par");
+  ASSERT((Par2 >= Par), "Par2 must be greater than or equal to Par");
+  ASSERT((Par2 % Par) == 0, "Par2 must be a multiple of Par");
   ASSERT((k % Par) == 0, "k must be a multiple of Par");
+  ASSERT((n % Par2) == 0, "n must be a multiple of Par2");
   ASSERT(A.rows() == m, "A.rows() must be equal to m");
   ASSERT(A.cols() == k, "A.cols() must be equal to k");
   ASSERT(B.rows() == k, "B.rows() must be equal to k");
@@ -157,14 +160,16 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
  * @param[out] result The output matrix to write to.
  * @param[in]  buffer Unused.
  */
-template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T),
+          const unsigned int Par2 = Par>
 void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alpha,
         Matrix<T, RowMajor, Par> &A, Matrix<T, ColMajor, Par> &B, Matrix<T, ColMajor, Par> &result,
         T *buffer = nullptr) {
 #pragma HLS INLINE
-  ASSERT((n % Par) == 0, "n must be a multiple of Par");
-  ASSERT((m % Par) == 0, "m must be a multiple of Par");
+  ASSERT((Par2 >= Par), "Par2 must be greater than or equal to Par");
+  ASSERT((Par2 % Par) == 0, "Par2 must be a multiple of Par");
   ASSERT((k % Par) == 0, "k must be a multiple of Par");
+  ASSERT((m % Par2) == 0, "m must be a multiple of Par2");
   ASSERT(A.rows() == m, "A.rows() must be equal to m");
   ASSERT(A.cols() == k, "A.cols() must be equal to k");
   ASSERT(B.rows() == k, "B.rows() must be equal to k");
@@ -185,7 +190,7 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
   typename Matrix<T, ColMajor, Par>::StreamType B_stream;
   B.read(B_stream, false, A.rows(), 1, buffer);
   A.read(A_stream, false, 1, B.cols(), buffer + (B.is_buffered() ? 0 : m));
-  mm_impl<T, ColMajor, Par>(n, m, k, alpha, B_stream, A_stream, result);
+  mm_impl<T, ColMajor, Par>(m, n, k, alpha, B_stream, A_stream, result);
 
   ASSERT(A.empty(), "Matrix A isn't empty");
   ASSERT(B.empty(), "Matrix B isn't empty");
@@ -226,6 +231,8 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
         Matrix<T, OrderA, Par> &A, Matrix<T, OrderB, Par> &B, T beta, Matrix<T, OrderC, Par2> &C,
         Matrix<T, OrderC, Par2> &result, T *buffer = nullptr) {
 #pragma HLS INLINE
+  ASSERT((Par2 >= Par), "Par2 must be greater than or equal to Par");
+  ASSERT((Par2 % Par) == 0, "Par2 must be a multiple of Par");
   ASSERT((n % Par) == 0, "n must be a multiple of Par");
   ASSERT((m % Par) == 0, "m must be a multiple of Par");
   ASSERT((k % Par) == 0, "k must be a multiple of Par");

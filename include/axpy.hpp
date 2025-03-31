@@ -39,9 +39,12 @@ namespace blas {
  * @param[in]  y The input vector to add to the result.
  * @param[out] result The output vector to write to.
  */
-template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T),
+          const unsigned int Par2 = Par>
 void axpy(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y, Vector<T, Par> &result) {
 #pragma HLS INLINE
+  ASSERT((Par2 >= Par), "Par2 must be greater than or equal to Par");
+  ASSERT((Par2 % Par) == 0, "Par2 must be a multiple of Par");
   ASSERT((n % Par) == 0, "n must be a multiple of Par");
   ASSERT(n == x.length(), "n must be equal to the length of x");
   ASSERT(n == y.length(), "n must be equal to the length of y");
@@ -63,7 +66,15 @@ void axpy(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y, Vector<
 #pragma HLS UNROLL
       r_val[j] = alpha * x_val[j] + y_val[j];
     }
-    result.write(r_val);
+    #if Par2 > Par
+      r_idx += Par;
+      if (r_idx >= Par2) {
+        result.write(r_val);
+        r_idx = 0;
+      }
+    #else
+      result.write(r_val);
+    #endif
   }
 
   ASSERT(x.empty(), "Vector x isn't empty");
@@ -71,12 +82,17 @@ void axpy(unsigned int n, T alpha, Vector<T, Par> &x, Vector<T, Par> &y, Vector<
   ASSERT(!result.empty(), "Vector result is empty");
 }
 
-template <typename T, const MajorOrder Order, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
+template <typename T, const MajorOrder Order, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T),
+          const unsigned int Par2 = Par>
 void axpy(unsigned int n, unsigned int m, T alpha, Matrix<T, Order, Par> &x,
-          Matrix<T, Order, Par> &y, Matrix<T, Order, Par> &result) {
+          Matrix<T, Order, Par> &y, Matrix<T, Order, Par2> &result) {
 #pragma HLS INLINE
+  ASSERT((Par2 >= Par), "Par2 must be greater than or equal to Par");
+  ASSERT((Par2 % Par) == 0, "Par2 must be a multiple of Par");
   ASSERT((n % Par) == 0, "n must be a multiple of Par");
   ASSERT((m % Par) == 0, "m must be a multiple of Par");
+  ASSERT((n % Par2) == 0, "n must be a multiple of Par2");
+  ASSERT((m % Par2) == 0, "m must be a multiple of Par2");
   ASSERT(n == x.rows(), "n must be equal to the number of rows of x");
   ASSERT(m == x.cols(), "m must be equal to the number of cols of x");
   ASSERT(n == y.rows(), "n must be equal to the number of rows of y");
@@ -87,19 +103,29 @@ void axpy(unsigned int n, unsigned int m, T alpha, Matrix<T, Order, Par> &x,
 
   typename Matrix<T, Order, Par>::StreamType x_stream;
   typename Matrix<T, Order, Par>::StreamType y_stream;
+  WideType<T, Par> r_val = T(0);
+  unsigned int r_idx = 0;
   x.read(x_stream);
   y.read(y_stream);
+  
   for (unsigned int i = 0; i < m; i++) {
     for (unsigned int j = 0; j < n; j += Par) {
 #pragma HLS PIPELINE
-      WideType<T, Par> r_val = T(0);
       WideType<T, Par> x_val = x_stream.read();
       WideType<T, Par> y_val = y_stream.read();
       for (int k = 0; k < Par; k++) {
 #pragma HLS UNROLL
-        r_val[k] = alpha * x_val[k] + y_val[k];
+        r_val[r_idx + k] = alpha * x_val[k] + y_val[k];
       }
-      result.write(r_val);
+      #if Par2 > Par
+        r_idx += Par;
+        if (r_idx >= Par2) {
+          result.write(r_val);
+          r_idx = 0;
+        }
+      #else
+        result.write(r_val);
+      #endif
     }
   }
 

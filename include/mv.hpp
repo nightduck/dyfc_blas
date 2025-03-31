@@ -47,6 +47,8 @@ template <typename T, const MajorOrder Order = RowMajor,
 void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Par> &A,
         Vector<T, Par> &x, Vector<T, Par2> &result, T *buffer = nullptr) {
 #pragma HLS INLINE
+  ASSERT((Par2 >= Par), "Par2 must be greater than or equal to Par");
+  ASSERT((Par2 % Par) == 0, "Par2 must be a multiple of Par");
   ASSERT((n % Par) == 0, "n must be a multiple of Par");
   ASSERT((m % Par) == 0, "m must be a multiple of Par");
   ASSERT((m % Par2) == 0, "m must be a multiple of Par2");
@@ -180,6 +182,8 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
         Vector<T, Par> &x, T beta, Vector<T, Par> &y, Vector<T, Par2> &result,
         T *buffer = nullptr) {
 #pragma HLS INLINE
+  ASSERT((Par2 >= Par), "Par2 must be greater than or equal to Par");
+  ASSERT((Par2 % Par) == 0, "Par2 must be a multiple of Par");
   ASSERT((n % Par) == 0, "n must be a multiple of Par");
   ASSERT((m % Par) == 0, "m must be a multiple of Par");
   ASSERT(n == A.cols(), "n must be equal to the number of columns of A");
@@ -190,8 +194,8 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
   ASSERT(Order == RowMajor || buffer != nullptr,
          "If A is ColMajor, a buffer of size M must be provided");
   Vector<T, Par> Ax(m);
-  mv<T, Order, Par, Par2>(m, n, alpha, A, x, Ax, buffer);
-  axpy<T, Par>(m, beta, y, Ax, result);
+  mv<T, Order, Par>(m, n, alpha, A, x, Ax, buffer);
+  axpy<T, Par, Par2>(m, beta, y, Ax, result);
 
   ASSERT(A.empty(), "Matrix A isn't empty");
   ASSERT(x.empty(), "Vector x isn't empty");
