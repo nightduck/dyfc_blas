@@ -89,8 +89,7 @@ run_test() {
   echo "syn.cflags=-D dimK=$K -D dimM=$M -D dimN=$N" >>"$CONFIG_FILE"
 
   # Run the v++ command
-  # (cd "$TEMP_DIR" && v++ -c --mode hls --config "$CONFIG_FILE" --work_dir $TEMP_DIR/build >/dev/null 2>&1)
-  sleep $((RANDOM % 5 + 1))
+  (cd "$TEMP_DIR" && v++ -c --mode hls --config "$CONFIG_FILE" --work_dir $TEMP_DIR/build >/dev/null 2>&1)
 
   # Check if the command was successful
   if [ $? -ne 0 ]; then

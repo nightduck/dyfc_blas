@@ -78,13 +78,11 @@ LOOP_WideType_hillis_steele:
 template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void prefixsum(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &result) {
 #pragma HLS INLINE
-#ifndef __SYNTHESIS__
-  assert((n % Par) == 0);
-  assert(x.shape() == n);
-  assert(result.shape() == n);
-  assert(("This vector is a pure stream and only accepts one reader", x.read_lock()));
-  assert(("This vector only accepts one writer", result.write_lock()));
-#endif
+  ASSERT((n % Par) == 0, "n must be a multiple of Par");
+  ASSERT(x.shape() == n, "x must be a vector of length n");
+  ASSERT(result.shape() == n, "result must be a vector of length n");
+  ASSERT(x.read_lock(), "This vector is a pure stream and only accepts one reader");
+  ASSERT(result.write_lock(), "This vector only accepts one writer");
   typename Vector<T, Par>::StreamType x_stream;
   x.read(x_stream);
   WideType<T, Par> x_val;
@@ -97,10 +95,8 @@ void prefixsum(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &result) {
     r = r_val[Par - 1];
     result.write(r_val);
   }
-#ifndef __SYNTHESIS__
-  assert(("Vector x isn't empty", x.empty()));
-  assert(("Vector result is empty", !result.empty()));
-#endif
+  ASSERT(x.empty(), "Vector x isn't empty");
+  ASSERT(!result.empty(), "Vector result is empty");
 }
 
 }  // namespace blas

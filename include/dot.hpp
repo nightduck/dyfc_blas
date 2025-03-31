@@ -40,13 +40,12 @@ namespace blas {
 template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T)>
 void dot(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &y, T &result) {
 #pragma HLS INLINE
-#ifndef __SYNTHESIS__
-  assert((n % Par) == 0);
-  assert(n == x.length());
-  assert(n == y.length());
-  assert(("This vector is a pure stream and only accepts one reader", x.read_lock()));
-  assert(("This vector is a pure stream and only accepts one reader", y.read_lock()));
-#endif
+  ASSERT((n % Par) == 0, "n must be a multiple of Par");
+  ASSERT(n == x.length(), "n must be equal to the length of x");
+  ASSERT(n == y.length(), "n must be equal to the length of y");
+  ASSERT(x.read_lock(), "This vector is a pure stream and only accepts one reader");
+  ASSERT(y.read_lock(), "This vector is a pure stream and only accepts one reader");
+
   typename Vector<T, Par>::StreamType x_stream;
   typename Vector<T, Par>::StreamType y_stream;
   x.read(x_stream);
@@ -69,10 +68,9 @@ void dot(unsigned int n, Vector<T, Par> &x, Vector<T, Par> &y, T &result) {
     rr = r_val[Par - 1];
   }
   result = rr;
-#ifndef __SYNTHESIS__
-  assert(("Vector x isn't empty", x.empty()));
-  assert(("Vector y isn't empty", y.empty()));
-#endif
+
+  ASSERT(x.empty(), "Vector x isn't empty");
+  ASSERT(y.empty(), "Vector y isn't empty");
 }
 
 }  // namespace blas
