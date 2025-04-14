@@ -99,13 +99,15 @@ void mm_impl(const unsigned int m, const unsigned int n, const unsigned int k, T
  * @param[in]  A The input matrix to multiply.
  * @param[in]  B The input matrix to multiply.
  * @param[out] result The output matrix to write to.
- * @param[in]  buffer Unused.
+ * @param[in]  buffer Buffer to store intermediary values when the matrix is
+ * pure-stream and requires repeating elements
+ * @param[in]  buffer_size The size of the buffer. Only used in assertions.
  */
 template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T),
           const unsigned int Par2 = Par>
 void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alpha,
         Matrix<T, RowMajor, Par> &A, Matrix<T, ColMajor, Par> &B, Matrix<T, RowMajor, Par2> &result,
-        T *buffer = nullptr) {
+        T *buffer = nullptr, size_t buffer_size = 0) {
 #pragma HLS INLINE
   ASSERT((Par2 >= Par), "Par2 must be greater than or equal to Par");
   ASSERT((Par2 % Par) == 0, "Par2 must be a multiple of Par");
@@ -120,17 +122,19 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
   ASSERT(A.read_lock(), "This matrix is a pure stream and only accepts one reader");
   ASSERT(B.read_lock(), "This matrix is a pure stream and only accepts one reader");
   ASSERT(result.write_lock(), "This matrix only accepts one writer");
-  ASSERT(A.is_buffered() || B.is_buffered() || buffer != nullptr,
+  ASSERT_IF(buffer_size > 0, buffer != nullptr, "buffer_size is nonzero but buffer is null");
+  ASSERT_IF(buffer == nullptr, buffer_size == 0, "buffer_size must be 0 if buffer is not provided");
+  ASSERT_IF(!(A.is_buffered() || B.is_buffered()), buffer_size >= n*(m+1),
          "When A and B are pure streams, a buffer of size n*(m+1) must be provided");
-  ASSERT(B.is_buffered() || buffer != nullptr,
+  ASSERT_IF(!B.is_buffered(), buffer_size >= m*n,
          "When B is a pure stream, a buffer of size m*n must be provided");
-  ASSERT(A.is_buffered() || buffer != nullptr,
+  ASSERT_IF(!A.is_buffered(), buffer_size >= n,
          "When A is a pure stream, a buffer of size n must be provided");
 
   typename Matrix<T, RowMajor, Par>::StreamType A_stream;
   typename Matrix<T, ColMajor, Par>::StreamType B_stream;
-  A.read(A_stream, false, B.cols(), 1, buffer);
-  B.read(B_stream, false, 1, A.rows(), buffer + (A.is_buffered() ? 0 : n));
+  A.read(A_stream, false, B.cols(), 1, buffer, (A.is_buffered() ? 0 : n));
+  B.read(B_stream, false, 1, A.rows(), buffer + (A.is_buffered() ? 0 : n), (A.is_buffered() ? buffer_size : buffer_size - n));
 
   mm_impl<T, RowMajor, Par>(m, n, k, alpha, A_stream, B_stream, result);
 
@@ -158,13 +162,15 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
  * @param[in]  A The input matrix to multiply.
  * @param[in]  B The input matrix to multiply.
  * @param[out] result The output matrix to write to.
- * @param[in]  buffer Unused.
+ * @param[in]  buffer Buffer to store intermediary values when the matrix is
+ * pure-stream and requires repeating elements
+ * @param[in]  buffer_size The size of the buffer. Only used in assertions.
  */
 template <typename T, const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T),
           const unsigned int Par2 = Par>
 void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alpha,
         Matrix<T, RowMajor, Par> &A, Matrix<T, ColMajor, Par> &B, Matrix<T, ColMajor, Par> &result,
-        T *buffer = nullptr) {
+        T *buffer = nullptr, size_t buffer_size = 0) {
 #pragma HLS INLINE
   ASSERT((Par2 >= Par), "Par2 must be greater than or equal to Par");
   ASSERT((Par2 % Par) == 0, "Par2 must be a multiple of Par");
@@ -179,17 +185,19 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
   ASSERT(A.read_lock(), "This matrix is a pure stream and only accepts one reader");
   ASSERT(B.read_lock(), "This matrix is a pure stream and only accepts one reader");
   ASSERT(result.write_lock(), "This matrix only accepts one writer");
-  ASSERT(A.is_buffered() || B.is_buffered() || buffer != nullptr,
+  ASSERT_IF(buffer_size > 0, buffer != nullptr, "buffer_size is nonzero but buffer is null");
+  ASSERT_IF(buffer == nullptr, buffer_size == 0, "buffer_size must be 0 if buffer is not provided");
+  ASSERT_IF(!(A.is_buffered() || B.is_buffered()), buffer_size >= n*(m+1),
          "When A and B are pure streams, a buffer of size n*(m+1) must be provided");
-  ASSERT(A.is_buffered() || buffer != nullptr,
+  ASSERT_IF(!A.is_buffered(), buffer_size >= m*n,
          "When A is a pure stream, a buffer of size m*n must be provided");
-  ASSERT(B.is_buffered() || buffer != nullptr,
+  ASSERT_IF(!B.is_buffered(), buffer_size >= n,
          "When B is a pure stream, a buffer of size n must be provided");
 
   typename Matrix<T, RowMajor, Par>::StreamType A_stream;
   typename Matrix<T, ColMajor, Par>::StreamType B_stream;
-  B.read(B_stream, false, A.rows(), 1, buffer);
-  A.read(A_stream, false, 1, B.cols(), buffer + (B.is_buffered() ? 0 : m));
+  B.read(B_stream, false, A.rows(), 1, buffer, (B.is_buffered() ? 0 : n));
+  A.read(A_stream, false, 1, B.cols(), buffer + (B.is_buffered() ? 0 : n), (B.is_buffered() ? buffer_size : buffer_size - n));
   mm_impl<T, ColMajor, Par>(m, n, k, alpha, B_stream, A_stream, result);
 
   ASSERT(A.empty(), "Matrix A isn't empty");
@@ -223,13 +231,16 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
  * @param[in]  beta The scalar to multiply the input matrix C by.
  * @param[in]  C The input matrix to add to.
  * @param[out] result The output matrix to write to.
+ * @param[in]  buffer Buffer to store intermediary values when the matrix is
+ * pure-stream and requires repeating elements
+ * @param[in]  buffer_size The size of the buffer. Only used in assertions.
  */
 template <typename T, const MajorOrder OrderA = RowMajor, const MajorOrder OrderB = ColMajor,
           const MajorOrder OrderC = RowMajor, const UpperLower UpLo = Upper,
           const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T), const unsigned int Par2 = Par>
 void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alpha,
         Matrix<T, OrderA, Par> &A, Matrix<T, OrderB, Par> &B, T beta, Matrix<T, OrderC, Par2> &C,
-        Matrix<T, OrderC, Par2> &result, T *buffer = nullptr) {
+        Matrix<T, OrderC, Par2> &result, T *buffer = nullptr, size_t buffer_size = 0) {
 #pragma HLS INLINE
   ASSERT((Par2 >= Par), "Par2 must be greater than or equal to Par");
   ASSERT((Par2 % Par) == 0, "Par2 must be a multiple of Par");
@@ -244,10 +255,12 @@ void mm(const unsigned int m, const unsigned int n, const unsigned int k, T alph
   ASSERT(C.cols() == n, "C.cols() must be equal to n");
   ASSERT(result.rows() == m, "result.rows() must be equal to m");
   ASSERT(result.cols() == n, "result.cols() must be equal to n");
+  ASSERT_IF(buffer_size > 0, buffer != nullptr, "buffer_size is nonzero but buffer is null");
+  ASSERT_IF(buffer == nullptr, buffer_size == 0, "buffer_size must be 0 if buffer is not provided");
 
   if (OrderA != OrderB) {
     Matrix<T, OrderC, Par> AB(m, n);
-    mm(m, n, k, alpha, A, B, AB, buffer);
+    mm(m, n, k, alpha, A, B, AB, buffer, buffer_size);
     axpy(m, n, beta, C, AB, result);
 
     ASSERT(A.empty(), "Matrix A isn't empty");

@@ -109,7 +109,11 @@ class Vector {
       WideType<T, Par> value;
       for (size_t j = 0; j < Par; j++) {
 #pragma HLS UNROLL
-        value[j] = p_Val;
+        if (i + j < length) {
+          value[j] = p_Val;
+        } else {
+          value[j] = 0;
+        }
       }
       stream_.write(value);
     }
@@ -202,14 +206,19 @@ void write(WideType<T, Par> value) {
  * provided stream
  * @param repeat_vector The number of times to repeat the vector into the
  * provided stream
+ * @param buffer An optional buffer to store intermediary values when the vector
+ * is pure-stream and requires repeating elements
+ * @param buffer_size The size of the buffer. Only used in assertions.
  *
  * @return A WideType containing the next Par elements from the stream.
  */
-void read(StreamType &stream, int repeat_elements = 1, int repeat_vector = 1, T *buffer = nullptr) {
+void read(StreamType &stream, int repeat_elements = 1, int repeat_vector = 1, T *buffer = nullptr, size_t buffer_size = 0) {
 // TODO: Explore getting rid of repeat elements. It kind fucks up performance
 // unless we can guarantee it's a power of 2
   ASSERT(repeat_elements > 0, "repeat_elements must be at least 1");
   ASSERT(repeat_vector > 0, "repeat_vector must be at least 1");
+  ASSERT_IF(buffer_size > 0, buffer != nullptr, "buffer_size is nonzero but buffer is null");
+  ASSERT_IF(buffer == nullptr, buffer_size == 0, "buffer_size must be 0 if buffer is not provided");
 
   // TODO: For now only sequential reads are supported
   ASSERT(repeat_elements == 1, "repeat_elements is not supported yet, must be left default");
@@ -547,13 +556,21 @@ class Matrix {
    * supported with tiling
    * @param repeat_row Number of times to repeat each row in a tile
    * @param repeat_matrix Number of times to repeat the entire matrix
+   * @param buffer An optional buffer to store intermediary values when the matrix
+   * is pure-stream and requires repeating elements
    */
   void read(StreamType &stream, const bool repeat_elements = false, const int repeat_row = 1,
-            const int repeat_matrix = 1, T *buffer = nullptr) {
+            const int repeat_matrix = 1, T *buffer = nullptr, size_t buffer_size = 0) {
     ASSERT(!repeat_elements, "repeat_elements is not supported yet, must be left default");
     ASSERT(repeat_row > 0, "repeat_row must be at least 1");
     ASSERT(repeat_matrix > 0, "repeat_matrix must be at least 1");
-
+    ASSERT_IF(buffer_size > 0, buffer != nullptr, "buffer_size is nonzero but buffer is null");
+    ASSERT_IF(buffer == nullptr, buffer_size == 0, "buffer_size must be 0 if buffer is not provided");
+    ASSERT_IF(!is_buffered() && repeat_elements > 1, buffer_size >= rows_*cols_,
+            "When matrix is pure stream and repeat_matrix > 1, a buffer of size m*n must be provided");
+    ASSERT_IF(!is_buffered() && repeat_elements == 1, buffer_size >= rows_,
+            "When matrix is pure stream and repeat_matrix > 1, a buffer of size m*n must be provided");
+            
     if (buffer_ == nullptr) {
       // TODO: Implement reordering from sequential stream. For now it ignores
       // the parameters and does a sequential read
@@ -571,13 +588,13 @@ class Matrix {
                 if ((repeat_matrix > 1) || (repeat_row > 1)) {
                   for (int m = 0; m < Par; m++) {
 #pragma HLS UNROLL
-                    buffer_[j * cols_ + l + m] = value[m];
+                    buffer[((repeat_matrix == 1) ? 0 : j * cols_) + l + m] = value[m];
                   }
                 }
               } else {
                 for (int m = 0; m < Par; m++) {
 #pragma HLS UNROLL
-                  value[m] = buffer_[((repeat_matrix == 1) ? 0 : j * cols_) + l + m];
+                  value[m] = buffer[((repeat_matrix == 1) ? 0 : j * cols_) + l + m];
                 }
               }
               stream.write(value);

@@ -40,12 +40,14 @@ namespace blas {
  * @param[in]  A The input matrix to multiply.
  * @param[in]  x The input vector to multiply.
  * @param[out] result The output vector to write to.
- * @param[in]  buffer A buffer of size m to store the intermediate results of the
+ * @param[in]  buffer A buffer of size m to store the intermediate results of the 
+ * matrix-vector product.
+ * @param[in]  buffer_size The size of the buffer. Only used in assertions.
  */
 template <typename T, const MajorOrder Order = RowMajor,
           const unsigned int Par = MAX_BITWIDTH / 8 / sizeof(T), const unsigned int Par2 = Par>
 void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Par> &A,
-        Vector<T, Par> &x, Vector<T, Par2> &result, T *buffer = nullptr) {
+        Vector<T, Par> &x, Vector<T, Par2> &result, T *buffer = nullptr, size_t buffer_size = 0) {
 #pragma HLS INLINE
   ASSERT((Par2 >= Par), "Par2 must be greater than or equal to Par");
   ASSERT((Par2 % Par) == 0, "Par2 must be a multiple of Par");
@@ -59,6 +61,8 @@ void mv(const unsigned int m, const unsigned int n, T alpha, Matrix<T, Order, Pa
   ASSERT(A.read_lock(), "This matrix is a pure stream and only accepts one reader");
   ASSERT(x.read_lock(), "This vector is a pure stream and only accepts one reader");
   ASSERT(result.write_lock(), "This vector only accepts one writer");
+  ASSERT_IF(buffer_size > 0, buffer != nullptr, "buffer_size is nonzero but buffer is null");
+  ASSERT_IF(buffer == nullptr, buffer_size == 0, "buffer_size must be 0 if buffer is not provided");
   ASSERT(Order == RowMajor || buffer != nullptr,
          "If A is ColMajor, a buffer of size M must be provided");
   typename Matrix<T, Order, Par>::StreamType A_stream;
